@@ -13,12 +13,13 @@ S ∈ Statement(V) ::=
 | x := y
 | x := &y
 | x := *y
+| *x := y
 | x := op(y1,...,yn)
 | x := allocate(y)
 | x := fun(f1…fn) → (r1…rm) S*
 | x := p(y1,...,yn)
 | skip
-| if c then S1 else S2
+| if (c) then {S1} else {S2}
 | S1; S2
-| while c do S
+| while (c) do {S}
 

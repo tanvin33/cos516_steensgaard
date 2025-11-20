@@ -1,28 +1,3 @@
-# REFERENCE GRAMMAR FOR A SIMPLE IMPERATIVE LANGUAGE
-# x, y, f, r ∈ V ∪ Real Numbers
-
-# p∈ V
-
-# o ∈ op(V) ::= add  | negate | multiply
-
-# e := x  ∈ V ∪ Real Numbers  | op(y1,...,yn) | *x | &y
-
-# c ∈ Condition(V) ::= e1 ≤ e2 | e1 < e2 | e1 = e2 | c1 ∧ c2 | c1 ∨ c2 | ¬c
-
-# S ∈ Statement(V) ::=
-# | x := y
-# | x := &y
-# | x := *y
-# | x := op(y1,...,yn)
-# | x := allocate(y)
-# | x := fun(f1…fn) → (r1…rm) S*
-# | x := p(y1,...,yn)
-# | skip
-# | if c then S1 else S2
-# | S1; S2
-# | while c do S
-
-
 # Steps 
 # 1. Break up program into commands (lines ending with ;)
 # 2. Parse each command according to the grammar above
@@ -50,6 +25,17 @@ def process(program: str):
 
   for command in commands:
       print(f"Processing command: {command}")
+      if command.startswith("skip"):
+          print("Parsed a skip command.")
+      elif command.startswith("if"):
+          print("Parsed an if statement.")
+      elif command.startswith("while"):
+          print("Parsed a while loop.")
+      elif ":=" in command:
+          print("Parsed an assignment.")
+      else:
+          print("Unknown command format.")
+
       # Here you would add the parsing logic according to the grammar
       # For demonstration, we will just print the command
 
