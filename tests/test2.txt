@@ -1,0 +1,15 @@
+x := allocate(10);
+y := &x;
+z := *y;
+a := b;
+*x := z;
+w := add(x, y);
+while (x < 10) {
+    x := negate(x);
+    y := multiply(y, z);};
+if (x < 10) then {
+    x := &z;
+} else {
+    x := allocate(20);
+    skip;
+};
