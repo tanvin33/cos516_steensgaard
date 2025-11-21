@@ -154,30 +154,32 @@ example_code = """
         skip;
     };
 
-    #TODO : fix handling of blocks in while and if statements
-
 """
 
-parser = create_sil_parser()
+def main():
+  parser = create_sil_parser()
 
-try:
-    # 1. Parse the code
-    ast = parser.parse_string(example_code)
+  try:
+      # 1. Parse the code
+      ast = parser.parse_string(example_code)
+      
+      print(f"{'STATEMENT TYPE':<15} | {'CONSTRAINT LOGIC'}")
+      print("-" * 50)
+      
+      for c in ast:
+          ctype = c['type']
     
-    print(f"{'STATEMENT TYPE':<15} | {'CONSTRAINT LOGIC'}")
-    print("-" * 50)
-    
-    for c in ast:
-        ctype = c['type']
-  
-        logic = str(c)
-            
-        print(f"{ctype:<15} | {logic}")
+          logic = str(c)
+              
+          print(f"{ctype:<15} | {logic}")
 
-    all_constraints = get_all_constraints(ast)
-    print("\nAll Constraints:")
-    for constraint in all_constraints:
-        print(constraint)
+      all_constraints = get_all_constraints(ast)
+      print("\nAll Constraints:")
+      for constraint in all_constraints:
+          print(constraint)
 
-except pp.ParseException as e:
-    print("Parse Error:", e)
+  except pp.ParseException as e:
+      print("Parse Error:", e)
+
+if __name__ == "__main__":
+    main()
