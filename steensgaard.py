@@ -2,7 +2,7 @@
 Program to Implement Steensgaard's Points-to Analysis in Almost Linear Time
 
 Course: COS 516
-Author: Tanvi Namjoshi & Lana Glisic
+Authors: Tanvi Namjoshi & Lana Glisic
 '''
 
 import networkx as nx
@@ -10,8 +10,6 @@ import matplotlib.pyplot as plt
 import argparse
 import sys
 from pyparser import *
-
-
 
 def parse_program(program: str):
     """

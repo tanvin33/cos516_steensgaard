@@ -1,3 +1,14 @@
+'''
+Parser for a Simple Imperative Language (SIL) defined in sil_ref.txt
+The parser uses the pyparsing library to define the grammar and parse the programs 
+
+The parsing actions build a useful dictionary representation of each assignment
+command relevant to Steensgaard's analysis, which ignores control flow commands.
+
+Course: COS 516
+Authors: Tanvi Namjoshi & Lana Glisic
+'''
+
 import pyparsing as pp
 
 def create_sil_parser(): 
@@ -19,7 +30,6 @@ def create_sil_parser():
   l_brace, r_brace = pp.Literal("{"), pp.Literal("}")
   assign = pp.Literal(":=")
   semicolon = pp.Literal(";").suppress()
-  comma = pp.Literal(",").suppress()
 
   # Keywords 
   skip = pp.Keyword("skip")
@@ -135,28 +145,29 @@ def get_all_constraints(ast):
           constraints.append(stmt)
     return constraints
 
-# TEST with Example 
-
-example_code = """
-    x := allocate(10);
-    y := &x;
-    z := *y;
-    a := b;
-    *x := z;
-    w := add(x, y);
-    while (x < 10) {
-        x := negate(x);
-        y := multiply(y, z);};
-    if (x < 10) then {
-        x := &z;
-    } else {
-        x := allocate(20);
-        skip;
-    };
-
-"""
-
 def main():
+  # TEST with Example 
+
+  example_code = """
+      x := allocate(10);
+      y := &x;
+      z := *y;
+      a := b;
+      *x := z;
+      w := add(x, y);
+      while (x < 10) {
+          x := negate(x);
+          y := multiply(y, z);};
+      if (x < 10) then {
+          x := &z;
+      } else {
+          x := allocate(20);
+          skip;
+      };
+
+  """
+
+
   parser = create_sil_parser()
 
   try:
