@@ -69,7 +69,7 @@ def create_sil_parser():
     # x := allocate(y)
     lhs = tokens[0]
     return {"type": "allocate", "lhs": lhs}
-  
+    
   # We don't need any actions for any of the control flow commands 
   # For if and skip, we just need to know what is inside those blocks
   # so we can parse them recursively
@@ -79,7 +79,8 @@ def create_sil_parser():
   # ==========================================
 
   statement = pp.Forward()
-  block  = l_brace + pp.ZeroOrMore(statement) + r_brace 
+  block  = pp.Group(l_brace + pp.ZeroOrMore(statement) + r_brace)
+
 
   # Handle the different types of assignment statement s
 
@@ -102,14 +103,14 @@ def create_sil_parser():
   # we only really care about the blocks inside them for now
   skip_stmt = skip.setParseAction(lambda tokens: {"type": "skip"})
 
-  if_stmt = (if_kw + lpar + pp.SkipTo(rpar) + rpar + then_kw + block +
-             else_kw  + block).setParseAction(
-               lambda tokens: {"type": "if", "then": tokens[6], "else": tokens[10]},
+  if_stmt = (if_kw + lpar + pp.SkipTo(rpar) + rpar + then_kw + block("then") +
+             else_kw  + block("else")).setParseAction(
+               lambda tokens: {"type": "if", "then": tokens["then"].as_list()[1:-1], "else": tokens["else"].as_list()[1:-1]},
              )
   
   while_stmt = (while_kw + lpar + pp.SkipTo(rpar) + rpar +
-                 block).setParseAction(
-                   lambda tokens: {"type": "while", "body": tokens[5]},
+                 block("body")).setParseAction(
+                   lambda tokens: {"type": "while", "body": tokens["body"].as_list()[1:-1]},
                  )
 
   statement <<= (if_stmt | while_stmt | skip_stmt | assignment) + semicolon
@@ -117,6 +118,22 @@ def create_sil_parser():
   program = pp.OneOrMore(statement)
   return program
 
+
+# After we have the AST, we can traverse it to get all the relevant constraints
+# to do Steensgaard's analysis. This means ignoring control flow statements, and
+# skip statements, but getting the constraints inside their blocks.
+def get_all_constraints(ast):
+    constraints = []
+    for stmt in ast:
+        if stmt['type'] == "if":
+            constraints = constraints + get_all_constraints(stmt['then']) + get_all_constraints(stmt['else'])
+        elif stmt['type'] == "while":
+            constraints = constraints + get_all_constraints(stmt['body'])
+        elif stmt['type'] == "skip":
+            continue
+        else:
+          constraints.append(stmt)
+    return constraints
 
 # TEST with Example 
 
@@ -127,12 +144,17 @@ example_code = """
     a := b;
     *x := z;
     w := add(x, y);
+    while (x < 10) {
+        x := negate(x);
+        y := multiply(y, z);};
     if (x < 10) then {
         x := &z;
     } else {
+        x := allocate(20);
         skip;
     };
 
+    #TODO : fix handling of blocks in while and if statements
 
 """
 
@@ -151,6 +173,11 @@ try:
         logic = str(c)
             
         print(f"{ctype:<15} | {logic}")
+
+    all_constraints = get_all_constraints(ast)
+    print("\nAll Constraints:")
+    for constraint in all_constraints:
+        print(constraint)
 
 except pp.ParseException as e:
     print("Parse Error:", e)

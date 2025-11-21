@@ -10,12 +10,12 @@ e := x  ∈ V ∪ Real Numbers  | op(y1,...,yn) | *x | &y
 c ∈ Condition(V) ::= e1 ≤ e2 | e1 < e2 | e1 = e2 | c1 ∧ c2 | c1 ∨ c2 | ¬c
 
 S ∈ Statement(V) ::=
-| x := y
-| x := &y
-| x := *y
-| *x := y
-| x := op(y1,...,yn)
-| x := allocate(y)
+| x := y (assign)
+| x := &y (address of)
+| x := *y (deref)
+| *x := y (store)
+| x := op(y1,...,yn) (op)
+| x := allocate(y) # allocate
 | x := fun(f1…fn) → (r1…rm) S*
 | x := p(y1,...,yn)
 | skip
