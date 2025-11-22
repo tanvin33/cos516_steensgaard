@@ -11,8 +11,8 @@ import argparse
 import sys
 from pyparser import *
 
-
 class UnionFind:
+    """ A Union-Find data structure to maintain equivalence classes of pointers. """
     def __init__(self): 
         self.parent = {}
     
@@ -43,6 +43,9 @@ class UnionFind:
                 sets[root] = []
             sets[root].append(item)
         return list(sets.values())
+    
+    def __str__(self):
+        return str(self.parent)
 
 def parse_program(program: str):
     """
