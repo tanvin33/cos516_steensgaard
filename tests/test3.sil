@@ -1,0 +1,14 @@
+# Test 3: Test IF statements
+# we should expect a list of 6 constraints from sil_parser
+
+
+# Simple if
+if (x < y) then {x := 0;} else {y := &x;};
+# then -block has multiple statements (generate multiple constraints)
+if (x < y) then {
+  x := 0;
+  y := 0;
+} else {
+    y := *x;
+    z := allocate(20);
+};
