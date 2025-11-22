@@ -11,6 +11,39 @@ import argparse
 import sys
 from pyparser import *
 
+
+class UnionFind:
+    def __init__(self): 
+        self.parent = {}
+    
+    def add(self, item):
+        """Adds a new item as its own parent (new set)."""
+        self.parent[item] = item
+    
+    def find(self, item):
+        """Finds the top element of the set containing 'item'."""
+        if self.parent[item] == item:
+            return item
+        else:
+            return self.find(self.parent[item])
+    
+    def union(self, item1, item2):
+        """Unites the sets containing 'item1' and 'item2'."""
+        root1 = self.find(item1)
+        root2 = self.find(item2)
+        if root1 != root2:
+            self.parent[root2] = root1
+    
+    def get_sets(self):
+        """Returns all sets in the union-find structure."""
+        sets = {}
+        for item in self.parent:
+            root = self.find(item)
+            if root not in sets:
+                sets[root] = []
+            sets[root].append(item)
+        return list(sets.values())
+
 def parse_program(program: str):
     """
     Parses the inputted SIL program and returns its AST.
