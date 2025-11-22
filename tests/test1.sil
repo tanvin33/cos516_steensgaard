@@ -1,0 +1,3 @@
+# Test a simple assign, and comments
+x := y; 
+z := x; # hello this is a comment, the next assign should be ignored y:=z;

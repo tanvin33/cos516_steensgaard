@@ -2,6 +2,7 @@ REFERENCE GRAMMAR FOR A SIMPLE IMPERATIVE LANGUAGE
 
 Notes: 
 - Unlike the in class example, every program must end with a ;
+- You can add comments to SIL files starting with # and ending at the end of the line
 
 V is the set of variable names
 x, y, f, r ∈ V ∪ Real Numbers

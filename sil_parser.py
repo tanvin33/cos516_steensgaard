@@ -7,6 +7,9 @@ command relevant to Steensgaard's analysis, which ignores control flow commands.
 
 Course: COS 516
 Authors: Tanvi Namjoshi & Lana Glisic
+
+Usage:
+  python sil_parser.py -fn <filename>
 '''
 
 import pyparsing as pp
@@ -41,6 +44,10 @@ def create_sil_parser():
   while_kw = pp.Keyword("while")
 
   op_kw = pp.Keyword("add") | pp.Keyword("negate") |pp.Keyword("multiply") 
+
+  # Comments. Allows for 1-line comments starting with # (ignored when parsing)
+  comment = (pp.Literal("#") + pp.SkipTo(pp.lineEnd)).suppress()
+
 
   # ==========================================
   # 2. Functions to save info for commands relevant to Steensgaard's analysis
@@ -93,7 +100,6 @@ def create_sil_parser():
   statement = pp.Forward()
   block  = pp.Group(l_brace + pp.ZeroOrMore(statement) + r_brace)
 
-
   # Handle the different types of assignment statement s
 
   # x := op(...)
@@ -125,7 +131,7 @@ def create_sil_parser():
                    lambda tokens: {"type": "while", "body": tokens["body"].as_list()[1:-1]},
                  )
 
-  statement <<= (if_stmt | while_stmt | skip_stmt | assignment) + semicolon
+  statement <<= (if_stmt | while_stmt | skip_stmt | assignment) + semicolon | comment
 
   program = pp.OneOrMore(statement)
   return program
@@ -149,29 +155,10 @@ def get_all_constraints(ast):
 
 def main(args=None):
   # TEST with Example 
-
-  example_code = """
-      x := allocate(10);
-      y := &x;
-      z := *y;
-      a := b;
-      *x := z;
-      w := add(x, y);
-      while (x < 10) {
-          x := negate(x);
-          y := multiply(y, z);};
-      if (x < 10) then {
-          x := &z;
-      } else {
-          x := allocate(20);
-          skip;
-      };
-
-  """
   parser = argparse.ArgumentParser(description="A python implementation of Steensgaard's Points-to Analysis.")
 
   # Command line arguments
-  parser.add_argument("-fn", "--filename", type=str, 
+  parser.add_argument("-fn", "--filename", type=str, default="tests/test.sil",
                       help="Specify a filename for a SIL program.")
 
 
@@ -179,14 +166,11 @@ def main(args=None):
   # If args is None, parse_args will default to sys.argv[1:]
   program_fn = parser.parse_args(args).filename
 
-  # Access the parsed arguments
-  if program_fn:
-      with open(program_fn, "r") as f:
-          program = f.read()
-  else:
-      program = example_code
-      print("Using example code for testing.")
+  print(f"Parsing SIL program from file: {program_fn}")
 
+  # Access the parsed arguments
+  with open(program_fn, "r") as f:
+          program = f.read()
 
   parser = create_sil_parser()
 

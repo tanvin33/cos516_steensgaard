@@ -1,4 +1,10 @@
-"Code for the Union-Find data structure to be used in Steensgaard's analysis."
+'''
+Code for the Union-Find data structure to be used in Steensgaard's analysis.
+
+Usage (For quick sanity check test):
+    python union_find.py
+'''
+
 class UnionFind:
     """ A Union-Find data structure to maintain equivalence classes. """
     def __init__(self): 

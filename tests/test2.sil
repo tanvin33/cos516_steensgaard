@@ -1,0 +1,7 @@
+# Test 2: test each assignment type
+x := allocate(10);
+y := &x;
+z := *y;
+a := b;
+*x := z;
+w := add(x, y);
