@@ -1,0 +1,14 @@
+# Test 3: Test nested IF statements
+# we should expect a list of 5 constraints from sil_parser
+
+if (x < y) then {
+  if (y<0) then{
+    x := y;
+  } else {
+    y := negate(1);
+  };
+  z := x;
+} else {
+    y := *x;
+    z := allocate(20);
+};

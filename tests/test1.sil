@@ -1,3 +1,5 @@
-# Test a simple assign, and comments
+# Test 1: a simple assign, and comments
+# we should expect a list of 2 constraints from sil_parser
+
 x := y; 
 z := x; # hello this is a comment, the next assign should be ignored y:=z;

@@ -1,4 +1,6 @@
 # Test 2: test each assignment type
+# we should expect a list of 6 constraints from sil_parser
+
 x := allocate(10);
 y := &x;
 z := *y;

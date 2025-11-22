@@ -12,7 +12,7 @@ o ∈ op(V) ::= add  | negate | multiply
 
 e := x  ∈ V ∪ Real Numbers  | op(y1,...,yn) | *x | &y
 
-c ∈ Condition(V) ::= e1 ≤ e2 | e1 < e2 | e1 = e2 | c1 ∧ c2 | c1 ∨ c2 | ¬c
+c ∈ Condition(V) ::= e1 <= e2 | e1 < e2 | e1 = e2 | c1 ∧ c2 | c1 ∨ c2 | ¬c
 
 S ∈ Statement(V) ::=
 | x := y [We call this assign]

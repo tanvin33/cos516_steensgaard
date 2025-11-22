@@ -1,0 +1,13 @@
+# Test 6: Make sure skips work 
+# we should expect a list of 4 constraints from sil_parser
+
+x := y; 
+skip;
+z := x; 
+if(x = z) then {
+  y:= 1;
+  skip;
+  y:= 2;
+} else {
+  skip;
+};

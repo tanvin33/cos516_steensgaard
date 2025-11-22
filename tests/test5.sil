@@ -1,0 +1,23 @@
+# Test 5: While Loops 
+# we should expect a list of 6 constraints from sil_parser
+
+# While loop with 1 statement 
+while (x < 10) {
+    x := negate(x);
+};
+
+# While loop with several statements
+while (x < 10) {
+    x := negate(x);
+    y := multiply(y, z);
+};
+
+# Nested While Loops
+while (x < 10) {
+    while (y < 3){
+      z := x; 
+      y := z;
+    };
+    x := negate(y);
+};
+
