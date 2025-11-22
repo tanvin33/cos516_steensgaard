@@ -10,6 +10,8 @@ Authors: Tanvi Namjoshi & Lana Glisic
 '''
 
 import pyparsing as pp
+import argparse
+import sys
 
 def create_sil_parser(): 
 
@@ -145,7 +147,7 @@ def get_all_constraints(ast):
           constraints.append(stmt)
     return constraints
 
-def main():
+def main(args=None):
   # TEST with Example 
 
   example_code = """
@@ -166,26 +168,44 @@ def main():
       };
 
   """
+  parser = argparse.ArgumentParser(description="A python implementation of Steensgaard's Points-to Analysis.")
+
+  # Command line arguments
+  parser.add_argument("-fn", "--filename", type=str, 
+                      help="Specify a filename for a SIL program.")
+
+
+  # Parse the arguments
+  # If args is None, parse_args will default to sys.argv[1:]
+  program_fn = parser.parse_args(args).filename
+
+  # Access the parsed arguments
+  if program_fn:
+      with open(program_fn, "r") as f:
+          program = f.read()
+  else:
+      program = example_code
+      print("Using example code for testing.")
 
 
   parser = create_sil_parser()
 
   try:
       # 1. Parse the code
-      ast = parser.parse_string(example_code)
+      ast = parser.parse_string(program)
       
+      print("List of statement types and parsed information")
+
       print(f"{'STATEMENT TYPE':<15} | {'CONSTRAINT LOGIC'}")
       print("-" * 50)
       
       for c in ast:
           ctype = c['type']
-    
-          logic = str(c)
-              
+          logic = str(c)   
           print(f"{ctype:<15} | {logic}")
 
       all_constraints = get_all_constraints(ast)
-      print("\nAll Constraints:")
+      print("\nList of all extracted constraints:")
       for constraint in all_constraints:
           print(constraint)
 
@@ -193,4 +213,4 @@ def main():
       print("Parse Error:", e)
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main(sys.argv[1:]))
