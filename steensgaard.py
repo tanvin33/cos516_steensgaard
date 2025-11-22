@@ -12,7 +12,6 @@ import sys
 from sil_parser import *
 from union_find import UnionFind
 
-
 def parse_program(program: str):
     """
     Parses the inputted SIL program and returns its AST.
