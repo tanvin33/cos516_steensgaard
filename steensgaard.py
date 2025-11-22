@@ -9,7 +9,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import argparse
 import sys
-from pyparser import *
+from sil_parser import *
 
 class UnionFind:
     """ A Union-Find data structure to maintain equivalence classes of pointers. """
