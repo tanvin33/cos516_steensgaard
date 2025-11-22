@@ -12,7 +12,8 @@ class UnionFind:
     
     def add(self, item):
         """Adds a new item as its own parent (new set)."""
-        self.parent[item] = item
+        if item not in self.parent:
+            self.parent[item] = item
     
     def find(self, item):
         """Finds the top element of the set containing 'item'."""
