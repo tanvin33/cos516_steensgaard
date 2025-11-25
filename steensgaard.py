@@ -12,6 +12,7 @@ import sys
 import actions
 from sil_parser import *
 from type import TypeManager
+from union_find import UnionFind
 
 
 def parse_program(program: str):
@@ -30,6 +31,42 @@ def parse_program(program: str):
         return ast, constraints
     except pp.ParseException as e:
         print("Parse Error:", e)
+
+
+def create_graph(uf, map):
+    # TODO Tanvi add comments + clean up code
+    G = nx.DiGraph()
+    sets = uf.get_sets()
+    print("SETS:", tuple(sets))
+
+    for set in sets:
+        for node in set:
+            G.add_node(tuple(set))
+    for key, node in map.items():
+        if node.tau_ref is None:
+            continue
+        else:
+            # Find the set that contains node.uf_id
+            start = "start"
+            end = "end"
+            if node.tau_ref is None:
+                continue
+            else:
+                end_node = node.tau_ref.uf_id
+                for set in sets:
+                    if end_node in set:
+                        end = tuple(set)
+                    if node.uf_id in set:
+                        start = tuple(set)
+            G.add_edge(start, end)
+    print("Start drawing")
+    pos = nx.planar_layout(G)
+    nx.draw(G, pos, with_labels=True, node_color="lightblue", font_weight="bold")
+    plt.title("Storage Shape Graph for SIL Program")
+    # plt.show()
+    # nx.draw(G, with_labels=True, font_weight="bold")
+    plt.show()
+    return G
 
 
 def main(args=None):
@@ -74,7 +111,7 @@ def main(args=None):
 
                 # Instantiate Type if LHS variable is new
                 if x is None:
-                    x = manager.new_alpha()
+                    x = manager.new_alpha(c["lhs"])
                     map[c["lhs"]] = x
 
                 # Accommodate operations with no RHS variable
@@ -86,7 +123,7 @@ def main(args=None):
 
                     # Instantiate Type node if RHS variable is new
                     if y is None:
-                        y = manager.new_alpha()
+                        y = manager.new_alpha(c["rhs"])
                         map[c["rhs"]] = y
 
                 match c["type"]:
@@ -108,6 +145,8 @@ def main(args=None):
                 print(map)
                 for key, node in map.items():
                     print(key, node.uf_id, node.tau_ref, "<--")
+
+            G = create_graph(manager.uf, map)
             return 0
     else:
         print("No filename provided.")

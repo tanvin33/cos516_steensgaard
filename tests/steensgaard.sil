@@ -1,0 +1,9 @@
+# Example from Steensgaard's paper
+a := &x;
+b := &y;
+if (p) then {
+  y := &z;
+} else {
+  y := &x;
+};
+c := &y;

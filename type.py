@@ -51,8 +51,8 @@ class TypeManager:
         self.next_id = 0
 
     # Instantiation of a new Type node
-    def new_alpha(self):
-        new_id = self.next_id
+    def new_alpha(self, id):
+        new_id = id
         self.next_id += 1
 
         # Add new ID to UF
