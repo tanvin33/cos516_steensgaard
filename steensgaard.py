@@ -60,7 +60,11 @@ def create_graph(uf, map):
                         start = tuple(set)
             G.add_edge(start, end)
     print("Start drawing")
-    nx.draw(G, with_labels=True, font_weight="bold")
+    pos = nx.planar_layout(G)
+    nx.draw(G, pos, with_labels=True, node_color="lightblue", font_weight="bold")
+    plt.title("Storage Shape Graph for SIL Program")
+    # plt.show()
+    # nx.draw(G, with_labels=True, font_weight="bold")
     plt.show()
     return G
 
@@ -107,7 +111,7 @@ def main(args=None):
 
                 # Instantiate Type if LHS variable is new
                 if x is None:
-                    x = manager.new_alpha()
+                    x = manager.new_alpha(c["lhs"])
                     map[c["lhs"]] = x
 
                 # Accommodate operations with no RHS variable
@@ -119,7 +123,7 @@ def main(args=None):
 
                     # Instantiate Type node if RHS variable is new
                     if y is None:
-                        y = manager.new_alpha()
+                        y = manager.new_alpha(c["rhs"])
                         map[c["rhs"]] = y
 
                 match c["type"]:

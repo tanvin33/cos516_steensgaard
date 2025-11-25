@@ -1,8 +1,9 @@
-'''
+"""
 Code for unification logic and constraint generation as per Steensgaard's analysis.
-'''
+"""
 
 from type import Type
+
 
 ####################
 # Unification logic
@@ -70,8 +71,8 @@ def unify_lambda(manager, a, b, u):
     u.lam_args = a_args
     u.lam_rets = a_rets
 
-    #assert len(a_args) == len(b_args)
-    #assert len(a_rets) == len(b_rets)
+    # assert len(a_args) == len(b_args)
+    # assert len(a_rets) == len(b_rets)
 
     for i, a_u in enumerate(a_args):
         b_u = b_args[i]
@@ -101,7 +102,7 @@ def constraint_addr_of(manager, x, y):
 def constraint_deref(manager, x, y):
     # x = *y
     if y.tau_ref is None:
-        y.tau_ref = manager.new_alpha()
+        y.tau_ref = manager.new_alpha(y)
 
     unify_alpha(manager, x, y.tau_ref)
 
@@ -109,6 +110,6 @@ def constraint_deref(manager, x, y):
 def constraint_store(manager, x, y):
     # *x = y
     if x.tau_ref is None:
-        x.tau_ref = manager.new_alpha()
+        x.tau_ref = manager.new_alpha(x)
 
     unify_alpha(manager, x.tau_ref, y)
