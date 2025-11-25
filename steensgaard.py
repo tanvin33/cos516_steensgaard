@@ -1,9 +1,9 @@
-'''
+"""
 Program to Implement Steensgaard's Points-to Analysis in Almost Linear Time
 
 Course: COS 516
 Authors: Tanvi Namjoshi & Lana Glisic
-'''
+"""
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -11,8 +11,8 @@ import argparse
 import sys
 import actions
 from sil_parser import *
-from union_find import UnionFind
 from type import TypeManager
+
 
 def parse_program(program: str):
     """
@@ -29,7 +29,8 @@ def parse_program(program: str):
         constraints = get_all_constraints(ast)
         return ast, constraints
     except pp.ParseException as e:
-      print("Parse Error:", e)
+        print("Parse Error:", e)
+
 
 def main(args=None):
     """
@@ -38,12 +39,14 @@ def main(args=None):
     Returns the completed analysis.
     """
 
-    parser = argparse.ArgumentParser(description="A python implementation of Steensgaard's Points-to Analysis.")
+    parser = argparse.ArgumentParser(
+        description="A python implementation of Steensgaard's Points-to Analysis."
+    )
 
     # Command line arguments
-    parser.add_argument("-fn", "--filename", type=str, 
-                        help="Specify a filename for a SIL program.")
-  
+    parser.add_argument(
+        "-fn", "--filename", type=str, help="Specify a filename for a SIL program."
+    )
 
     # Parse the arguments
     # If args is None, parse_args will default to sys.argv[1:]
@@ -60,44 +63,44 @@ def main(args=None):
             print("Parsing completed.")
 
             # Manage type nodes
-            manager = TypeManager(UnionFind())
+            manager = TypeManager()
 
             # Map variable names to type nodes
             map = {}
 
             for c in constraints:
                 # Find Type node of LHS variable
-                x = map.get(c['lhs'])
+                x = map.get(c["lhs"])
 
                 # Instantiate Type if LHS variable is new
                 if x is None:
                     x = manager.new_alpha()
-                    map[c['lhs']] = x
+                    map[c["lhs"]] = x
 
                 # Accommodate operations with no RHS variable
                 y = None
 
                 # Find type node of RHS variable
-                if 'rhs' in c:
-                    y = map.get(c['rhs'])
+                if "rhs" in c:
+                    y = map.get(c["rhs"])
 
                     # Instantiate Type node if RHS variable is new
                     if y is None:
                         y = manager.new_alpha()
-                        map[c['rhs']] = y
+                        map[c["rhs"]] = y
 
-                match c['type']:
-                    case 'assign':
-                        print("assign", c['lhs'], c['rhs'])
+                match c["type"]:
+                    case "assign":
+                        print("assign", c["lhs"], c["rhs"])
                         actions.constraint_assign(manager, x, y)
-                    case 'addr_of':
-                        print("addr_of", c['lhs'], c['rhs'])
+                    case "addr_of":
+                        print("addr_of", c["lhs"], c["rhs"])
                         actions.constraint_addr_of(manager, x, y)
-                    case 'deref':
-                        print("deref", c['lhs'], c['rhs'])
+                    case "deref":
+                        print("deref", c["lhs"], c["rhs"])
                         actions.constraint_deref(manager, x, y)
-                    case 'store':
-                        print("store", c['lhs'], c['rhs'])
+                    case "store":
+                        print("store", c["lhs"], c["rhs"])
                         actions.constraint_store(manager, x, y)
                     case _:
                         print("Unrecognized constraint.")
@@ -109,6 +112,7 @@ def main(args=None):
     else:
         print("No filename provided.")
         return -1
+
 
 if __name__ == "__main__":
     # Call the main function with command-line arguments

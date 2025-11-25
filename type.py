@@ -1,4 +1,4 @@
-'''
+"""
 Code for management of Types as described in Steensgaard's analysis.
 
 As defined by Steensgaard:
@@ -8,11 +8,14 @@ As defined by Steensgaard:
 
 Each Type is an Alpha node by default.
 
-Alpha nodes may have a Tau attribute pointing to another Alpha node; 
+Alpha nodes may have a Tau attribute pointing to another Alpha node;
 this represents the value's location or a pointer to its location.
 Alpha nodes may have a Lambda attribute pointing to zero or more Alpha nodes;
 this represents the value's argument variables and return variables.
-'''
+"""
+
+from union_find import UnionFind
+
 
 class Type:
     def __init__(self, uf_id):
@@ -25,21 +28,21 @@ class Type:
 
         # A function, or a pointer to a function
         # None if bottom, otherwise zero or more Types
-        self.lam_args = None 
+        self.lam_args = None
         self.lam_rets = None
 
     # Currently unused (could use in unify_ for better for style)
     def is_tau_bottom(self):
         return self.tau_ref is None
-    
+
     def is_lam_bottom(self):
         return self.lam_args is None
-    
+
 
 class TypeManager:
-    def __init__(self, uf):
+    def __init__(self):
         # The Union-Find instance used for managing Types
-        self.uf = uf
+        self.uf = UnionFind()
 
         # A dictionary of all Type nodes
         self.nodes = {}
