@@ -102,7 +102,7 @@ def constraint_addr_of(manager, x, y):
 def constraint_deref(manager, x, y):
     # x = *y
     if y.tau_ref is None:
-        y.tau_ref = manager.new_alpha(y)
+        y.tau_ref = manager.new_alpha("test1")
 
     unify_alpha(manager, x, y.tau_ref)
 
@@ -110,6 +110,6 @@ def constraint_deref(manager, x, y):
 def constraint_store(manager, x, y):
     # *x = y
     if x.tau_ref is None:
-        x.tau_ref = manager.new_alpha(x)
+        x.tau_ref = manager.new_alpha("test2")
 
     unify_alpha(manager, x.tau_ref, y)
