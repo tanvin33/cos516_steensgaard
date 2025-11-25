@@ -9,8 +9,10 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import argparse
 import sys
+import actions
 from sil_parser import *
 from union_find import UnionFind
+from type import TypeManager
 
 def parse_program(program: str):
     """
@@ -56,6 +58,45 @@ def main(args=None):
             print("ALL CONSTRAINTS:")
             print(constraints)
             print("Parsing completed.")
+
+            # Manage type nodes
+            manager = TypeManager(UnionFind())
+
+            # Map variable names to type nodes (by ID)
+            map = {}
+
+            for c in constraints:
+                x = map.get(c['lhs'])
+                if x is None:
+                    x = manager.new_alpha()
+                    map[c['lhs']] = x
+
+                y = None
+                if 'rhs' in c:
+                    y = map.get(c['rhs'])
+                    if y is None:
+                        y = manager.new_alpha()
+                        map[c['rhs']] = y
+
+                match c['type']:
+                    case 'assign':
+                        print("assign", c['lhs'], c['rhs'])
+                        actions.constraint_assign(manager, x, y)
+                    case 'addr_of':
+                        print("addr_of", c['lhs'], c['rhs'])
+                        actions.constraint_addr_of(manager, x, y)
+                    case 'deref':
+                        print("deref", c['lhs'], c['rhs'])
+                        actions.constraint_deref(manager, x, y)
+                    case 'store':
+                        print("store", c['lhs'], c['rhs'])
+                        actions.constraint_store(manager, x, y)
+                    case _:
+                        print("Unrecognized constraint.")
+                print(manager.uf)
+                print(map)
+                for key, node in map.items():
+                    print(key, node.uf_id, node.tau_ref, "<--")
             return 0
     else:
         print("No filename provided.")
