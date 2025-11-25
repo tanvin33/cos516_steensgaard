@@ -1,3 +1,7 @@
+'''
+Code for unification logic and constraint generation as per Steensgaard's analysis.
+'''
+
 from type import Type
 
 ####################

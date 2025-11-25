@@ -62,18 +62,26 @@ def main(args=None):
             # Manage type nodes
             manager = TypeManager(UnionFind())
 
-            # Map variable names to type nodes (by ID)
+            # Map variable names to type nodes
             map = {}
 
             for c in constraints:
+                # Find Type node of LHS variable
                 x = map.get(c['lhs'])
+
+                # Instantiate Type if LHS variable is new
                 if x is None:
                     x = manager.new_alpha()
                     map[c['lhs']] = x
 
+                # Accommodate operations with no RHS variable
                 y = None
+
+                # Find type node of RHS variable
                 if 'rhs' in c:
                     y = map.get(c['rhs'])
+
+                    # Instantiate Type node if RHS variable is new
                     if y is None:
                         y = manager.new_alpha()
                         map[c['rhs']] = y
