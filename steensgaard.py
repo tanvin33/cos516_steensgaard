@@ -61,7 +61,14 @@ def create_graph(uf, map):
             G.add_edge(start, end)
     print("Start drawing")
     pos = nx.planar_layout(G)
-    nx.draw(G, pos, with_labels=True, node_color="lightblue", font_weight="bold")
+    nx.draw(
+        G,
+        pos,
+        with_labels=True,
+        node_color="lightblue",
+        font_weight="bold",
+        node_size=1000,
+    )
     plt.title("Storage Shape Graph for SIL Program")
     # plt.show()
     # nx.draw(G, with_labels=True, font_weight="bold")
