@@ -14,7 +14,8 @@ class TypeNode:
         # None if bottom; otherwise, zero or more TypeNodes
         self.lam_args = None
         self.lam_rets = None
-    
+
+
 class Analyst:
     def __init__(self):
         # The Union-Find instance used for managing Types
@@ -22,9 +23,6 @@ class Analyst:
 
         # A mapping of UF IDs to nodes
         self.nodes = {}
-
-        # UF IDs of pending sets
-        #self.pending = []
 
         # A mapping of UF IDs to sets of pending UF IDs
         self.pending = {}
@@ -68,8 +66,33 @@ class Analyst:
             else:
                 self.unify(t1, t2)
     
+
     def unify(self, t1, t2):
         if t1.tau != t2.tau:
             self.join(t1.uf_id, t2.uf_id)
+
+        if len(t1.lam_args) != len(t2.lam_args) or len(t1.lam_rets) != len(t2.lam_rets):
+            print("ERROR")
+            return
         
-        # TODO function handling
+        for i in range(len(t1.lam_args)):
+            self.join(t1.lam_args[i].uf_id, t2.lam_args[i].uf_id)
+
+        for i in range(len(t1.lam_rets)):
+            self.join(t1.lam_rets[i].uf_id, t2.lam_rets[i].uf_id)
+
+
+    def cjoin(self, e1, e2):
+        t2 = self.nodes[e2]
+
+        if t2.is_bottom:
+            self.pending[e2] = e1 | self.pending[e2]
+        else:
+            self.join(e1, e2)
+
+
+    def settype(self, e, t):
+        self.nodes[e] = t
+
+        for x in self.pending[e]:
+            self.join(e, x)
