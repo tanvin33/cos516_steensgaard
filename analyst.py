@@ -9,10 +9,10 @@ class TypeNode:
         # Defaults to bottom
         self.is_bottom = True
 
-        # None if bottom; otherwise, another TypeNode
+        # None if bottom; otherwise, a UF ID
         self.tau = None
 
-        # None if bottom; otherwise, zero or more TypeNodes
+        # None if bottom; otherwise, zero or more UF IDs
         self.lam_args = None
         self.lam_rets = None
 
@@ -62,6 +62,7 @@ class Analyst:
 
         return node
 
+    # e1 and e2 are UF IDs
     def join(self, e1, e2):
         t1 = self.node_for(e1)
         t2 = self.node_for(e2)
@@ -88,6 +89,7 @@ class Analyst:
             else:
                 self.unify(t1, t2)
 
+    # t1 and t2 are TypeNodes
     def unify(self, t1, t2):
         if t1.tau != t2.tau:
             self.join(t1.tau, t2.tau)
@@ -103,6 +105,7 @@ class Analyst:
         # for i in range(len(t1.lam_rets)):
         #     self.join(t1.lam_rets[i].uf_id, t2.lam_rets[i].uf_id)
 
+    # e1 and e2 are UF IDs
     def cjoin(self, e1, e2):
         t2 = self.nodes[e2]
 
@@ -113,6 +116,7 @@ class Analyst:
             print("t2 is not bottom, joining")
             self.join(e1, e2)
 
+    # e1 is a UF ID and t is a TypeNode
     def settype(self, e, t):
         self.nodes[e] = t
 
