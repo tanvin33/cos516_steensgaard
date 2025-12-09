@@ -33,6 +33,9 @@ class Analyst:
         # A mapping of UF IDs to sets of pending UF IDs
         self.pending = {}
 
+        # The next unused numerical ID for new Type creation
+        self.next_id = 0
+
     # Helper function for finding ECR representatives
     def rep(self, x):
         if isinstance(x, TypeNode):
@@ -104,8 +107,10 @@ class Analyst:
         t2 = self.nodes[e2]
 
         if t2.is_bottom:
+            print("t2 is bottom, adding pending")
             self.pending[e2] = {e1} | self.pending[e2]
         else:
+            print("t2 is not bottom, joining")
             self.join(e1, e2)
 
     def settype(self, e, t):
@@ -126,6 +131,7 @@ class Analyst:
         print("Taus before:", t1.tau, t2.tau)
 
         if t1.tau != t2.tau:
+            print("Assign, taus not equal")
             self.cjoin(t1.tau, t2.tau)
 
     def handle_addr_of(self, x, y):
@@ -148,3 +154,18 @@ class Analyst:
 
         if t1.tau != e2:
             self.join(e1, e2)
+
+    def handle_deref(self, x, y):
+        # handle the assignment x := *y
+        e1 = self.rep(x)
+        e2 = self.rep(y)
+        t1 = self.nodes[e1]
+        t2 = self.nodes[e2]
+
+        if self.nodes[t2.tau] is not None:
+            self.settype(t2.tau, e1)
+        else:
+            e3 = self.rep(t2.tau)  # the type y points to
+            t3 = self.nodes[e3]
+            if t1.tau != t3.tau:
+                self.cjoin(t1.tau, t3.tau)

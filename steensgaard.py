@@ -221,6 +221,9 @@ def main(args=None):
                     case "addr_of":
                         print("addr_of", c["lhs"], c["rhs"])
                         analyst.handle_addr_of(c["lhs"], c["rhs"])
+                    case "deref":
+                        print("deref", c["lhs"], c["rhs"])
+                        analyst.handle_deref(c["lhs"], c["rhs"])
                     case _:
                         print("Unrecognized constraint.")
                 print(analyst.uf)

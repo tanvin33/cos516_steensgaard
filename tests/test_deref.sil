@@ -1,0 +1,4 @@
+a := &b; # a points to b 
+c := &d; # c points to d
+a := c; # a and c point to new bd node
+x := *a;
