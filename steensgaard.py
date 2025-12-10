@@ -76,6 +76,8 @@ def create_graph(filename, uf, map):
     return G
 
 
+# This function returns the final typing of all variables.
+# The ECR is its union-find representative. The TypeNode is the relevant alpha type
 def get_typing(variables, analyst):
     for variable in variables:
         ecr_v = analyst.ecr(variable)
@@ -87,12 +89,14 @@ def run_steensgaard_analysis(variables, constraints):
     # variables is a set of variable names in the program
     # constraints is a list of constraints parsed from the SIL program
 
+    # Initialize the Analyst
     analyst = Analyst()
 
     # Initialize Type nodes for all variables
     for v in variables:
         analyst.new_type(v)
 
+    # Process each constraint
     for c in constraints:
         print("Processing constraint:", c)
 
@@ -115,8 +119,8 @@ def run_steensgaard_analysis(variables, constraints):
             case _:
                 print("Unrecognized constraint.")
 
-        print("Pending:", analyst.pending)
-        get_typing(variables, analyst)
+        print("Pending:", analyst.pending)  # debugging support
+        get_typing(variables, analyst)  # debugging support
 
     print("Final Types:")
     get_typing(variables, analyst)
@@ -125,6 +129,7 @@ def run_steensgaard_analysis(variables, constraints):
 
 
 def save_time_analysis(n, elapsed_time, filename="steensgaard_times.csv"):
+    # Add new time data points to CSV file
     df = pd.read_csv(filename)
     new_row_df = pd.DataFrame(
         [
@@ -159,17 +164,20 @@ def main(args=None):
     # If args is None, parse_args will default to sys.argv[1:]
     program_fn = parser.parse_args(args).filename
 
-    # Access the parsed arguments
+    # Access the parsed argument (filename)
     if program_fn:
         with open(program_fn, "r") as f:
             program = f.read()
             print(program)
+
             ast, constraints = parse_program(program)
+            n = len(constraints)  # number of constraints
+            all_variables = get_all_variables(ast)
+
+            # Print important information, helpful for debugging
             print("List of all constraints:")
             print(constraints)
-            n = len(constraints)  # number of constraints
             print(f"Total number of constraints: {n}")
-            all_variables = get_all_variables(ast)
             print(f"\nAll variable names encountered: {sorted(all_variables)}")
             print("Parsing completed.")
 
@@ -178,11 +186,12 @@ def main(args=None):
             uf, nodes = run_steensgaard_analysis(all_variables, constraints)
             end_time = time.perf_counter()
             elapsed_time = end_time - start_time
+
             print(
                 f"\nSteensgaard's analysis on {n} constraints completed in {elapsed_time:.6f} seconds."
             )
             save_time_analysis(n, elapsed_time)
-            G = create_graph(program_fn, uf, nodes)
+            G = create_graph(program_fn, uf, nodes)  # graph visualization
             return 0
     else:
         print("No filename provided.")
