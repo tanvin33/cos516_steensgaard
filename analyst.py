@@ -16,6 +16,16 @@ class TypeNode:
         self.lam_args = None
         self.lam_rets = None
 
+    def __str__(self):
+        return (
+            f"TypeNode(uf_id={self.uf_id}, is_bottom={self.is_bottom}, tau={self.tau}, "
+        )
+
+    def __repr__(self):
+        return (
+            f"TypeNode(uf_id={self.uf_id}, is_bottom={self.is_bottom}, tau={self.tau}, "
+        )
+
 
 # Helpful information for following from Steensgaard's paper:
 # every time Steensgaard calls type(e) we use self.nodes[e]
@@ -27,7 +37,7 @@ class Analyst:
         # The Union-Find instance used for managing Types
         self.uf = UnionFind()
 
-        # A mapping of UF IDs to nodes
+        # A mapping of UF IDs to TypeNodes (type() in Steensgaard's paper)
         self.nodes = {}
 
         # A mapping of UF IDs to sets of pending UF IDs
@@ -36,15 +46,14 @@ class Analyst:
         # The next unused numerical ID for new Type creation
         self.next_id = 0
 
-    # Helper function for finding ECR representatives
-    def rep(self, x):
-        if isinstance(x, TypeNode):
-            x = x.uf_id
+    # Helper function for finding ECR representatives of UF IDs
+    def ecr(self, x):
+        # Find representative of x
         return self.uf.find(x)
 
-    # Helper function: get TypeNode for an id or TypeNode
+    # Helper function: get TypeNode for an UF ID
     def node_for(self, x):
-        return self.nodes[self.rep(x)]
+        return self.nodes[self.ecr(x)]
 
     # Instantiation of a new Type node
     def new_type(self, uf_id):
@@ -90,9 +99,15 @@ class Analyst:
                 self.unify(t1, t2)
 
     # t1 and t2 are TypeNodes
+    # TODO: currently only handles tau, need to handle lam too
     def unify(self, t1, t2):
-        if t1.tau != t2.tau:
-            self.join(t1.tau, t2.tau)
+        if t1.tau is not None and t2.tau is not None:
+            if t1.tau != t2.tau:
+                self.join(t1.tau, t2.tau)
+        elif t1.tau is None and t2.tau is not None:
+            t1.tau = t2.tau
+        elif t2.tau is None and t1.tau is not None:
+            t2.tau = t1.tau
 
         # if len(t1.lam_args) != len(t2.lam_args) or len(t1.lam_rets) != len(t2.lam_rets):
         #     print("ERROR")
@@ -118,6 +133,7 @@ class Analyst:
 
     # e1 is a UF ID and t is a TypeNode
     def settype(self, e, t):
+        print("Set type", e, "to", t)
         self.nodes[e] = t
 
         for x in self.pending[e]:
@@ -125,8 +141,8 @@ class Analyst:
 
     def handle_assign(self, x, y):
         # handle the assignment x := y
-        e1 = self.rep(x)
-        e2 = self.rep(y)
+        e1 = self.ecr(x)
+        e2 = self.ecr(y)
         t1 = self.nodes[e1]
         t2 = self.nodes[e2]
 
@@ -136,40 +152,90 @@ class Analyst:
 
         if t1.tau != t2.tau:
             print("Assign, taus not equal")
-            self.cjoin(t1.tau, t2.tau)
+            self.join(self.ecr(t1.tau), self.ecr(t2.tau))
+            # self.cjoin(self.ecr(t1.tau), self.ecr(t2.tau))
 
     def handle_addr_of(self, x, y):
         # handle the assignment x := &y
         print("Handling address of:", x, y)
 
-        e1 = self.rep(x)
-        e2 = self.rep(y)
+        e1 = self.ecr(x)
+        tau_2 = self.ecr(y)
         t1 = self.nodes[e1]
 
         # If t1 is ⊥, set its type to point to e2 (and make it non-bottom)
         if t1.is_bottom:
-            t1.tau = e2
+            t1.tau = tau_2
             t1.is_bottom = False
             # Satisfy any pending assignments on e1
             self.settype(e1, t1)
 
-        print("EQR:", e1, e2)
-        print("Taus before:", t1.tau, e2)
+        print("EQR:", e1, tau_2)
+        print("Taus before:", t1.tau, tau_2)
 
-        if t1.tau != e2:
-            self.join(e1, e2)
+        if t1.tau != tau_2:
+            self.join(t1.tau, tau_2)
 
     def handle_deref(self, x, y):
-        # handle the assignment x := *y
-        e1 = self.rep(x)
-        e2 = self.rep(y)
-        t1 = self.nodes[e1]
-        t2 = self.nodes[e2]
+        # x := *y
+        e_y = self.ecr(y)
+        node_y = self.nodes[e_y]
 
-        if self.nodes[t2.tau] is not None:
-            self.settype(t2.tau, e1)
-        else:
-            e3 = self.rep(t2.tau)  # the type y points to
-            t3 = self.nodes[e3]
-            if t1.tau != t3.tau:
-                self.cjoin(t1.tau, t3.tau)
+        # if y is bottom, create a fresh varaible as its "target"
+        if node_y.is_bottom:
+            fresh_var = self.next_id
+            self.next_id += 1
+            self.new_type(fresh_var)  # Register new var in UF
+
+            node_y.is_bottom = False
+            node_y.tau = fresh_var
+
+        # Now y is guaranteed to have a target. Join the target wtih x
+        # Note: If y was already a pointer, we just join x with its existing target
+        e_x = self.ecr(x)
+        self.join(e_x, node_y.tau)
+
+    def handle_op(self, x, operands):
+        e_x = self.ecr(x)
+        t_x = self.nodes[e_x]
+        # x := op(...)
+        for operand in operands:
+            print("Operand:", operand)
+            e_yi = self.ecr(operand)
+            t_yi = self.nodes[e_yi]
+            print("Joining", t_x.tau, "and", t_yi.tau)
+            if t_x.tau != t_yi.tau:
+                self.join(t_x.tau, t_yi.tau)
+
+
+def run_steensgaard_analysis(variables, constraints):
+    # variables is a set of variable names in the program
+    # constraints is a list of constraints parsed from the SIL program
+
+    analyst = Analyst()
+
+    # Initialize Type nodes for all variables
+    for v in variables:
+        analyst.new_type(v)
+
+    for c in constraints:
+        print("Processing constraint:", c)
+
+        match c["type"]:
+            case "assign":
+                print("assign", c["lhs"], c["rhs"])
+                analyst.handle_assign(c["lhs"], c["rhs"])
+            case "addr_of":
+                print("addr_of", c["lhs"], c["rhs"])
+                analyst.handle_addr_of(c["lhs"], c["rhs"])
+            case "deref":
+                print("deref", c["lhs"], c["rhs"])
+                analyst.handle_deref(c["lhs"], c["rhs"])
+            case _:
+                print("Unrecognized constraint.")
+
+        print(analyst.nodes)
+        print(analyst.pending)
+
+        for key, node in analyst.nodes.items():
+            print(node.uf_id, "--> ", node.tau)

@@ -214,6 +214,13 @@ def main(args=None):
                     if y is None:
                         y = analyst.new_type(c["rhs"])
 
+                if "operands" in c:
+                    operands = c["operands"]
+                    for operand in operands:
+                        operand_node = analyst.nodes.get(operand)
+                        if operand_node is None:
+                            operand_node = analyst.new_type(operand)
+
                 match c["type"]:
                     case "assign":
                         print("assign", c["lhs"], c["rhs"])
@@ -224,10 +231,14 @@ def main(args=None):
                     case "deref":
                         print("deref", c["lhs"], c["rhs"])
                         analyst.handle_deref(c["lhs"], c["rhs"])
+                    case "op":
+                        print("op", c["lhs"], c["operands"])
+                        analyst.handle_op(c["lhs"], c["operands"])
                     case _:
                         print("Unrecognized constraint.")
                 print(analyst.uf)
                 print(analyst.nodes)
+                print("Pending assignments: ", analyst.pending)
                 for key, node in analyst.nodes.items():
                     print(key, node.uf_id, node.tau, "<--")
 
