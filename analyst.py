@@ -157,7 +157,7 @@ class Analyst:
         print("Taus before:", t1.tau, e2)
 
         if t1.tau != e2:
-            self.join(e1, e2)
+            self.join(t1.tau, e2)
 
     def handle_deref(self, x, y):
         # handle the assignment x := *y
