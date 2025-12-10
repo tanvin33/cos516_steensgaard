@@ -1,6 +1,15 @@
 from union_find import UnionFind
 
 
+""" 
+A TypeNode represents an Alpha type in Steensgaard's analysis. 
+
+It contains a UF ID, and structural information (Tau and Lambda types).
+The tau type is represented as another UF ID (the target of a pointer).
+
+"""
+
+
 class TypeNode:
     def __init__(self, uf_id=None, tau=None, lam=None):
         self.uf_id = uf_id
@@ -21,9 +30,13 @@ class TypeNode:
         return f"TypeNode(uf_id={self.uf_id}, is_bottom={self.is_bottom}, tau={self.tau}, lam={self.lam})"
 
 
-# Helpful information for following from Steensgaard's paper:
-# every time Steensgaard calls type(e) we use self.nodes[e]
-# where e is a UF ID
+"""
+The Analyst class does the heavy lifting of Steensgaard's analysis. 
+It uses a Union-Find data structure to manage types, based on their UF IDs.
+
+It supports operations to handle different kinds of constraints, such as
+assignments, address-of, etc. 
+"""
 
 
 class Analyst:
@@ -67,8 +80,11 @@ class Analyst:
 
     # e1 and e2 are UF IDs
     def join(self, e1, e2):
-        t1 = self.node_for(e1)
-        t2 = self.node_for(e2)
+        # Get TypeNodes for the equivalence classes of e1 and e2
+        e1 = self.ecr(e1)
+        e2 = self.ecr(e2)
+        t1 = self.nodes[e1]
+        t2 = self.nodes[e2]
 
         # Union e1 and e2
         self.uf.union(e1, e2)
@@ -78,8 +94,10 @@ class Analyst:
             self.nodes[e] = t2
 
             if t2.is_bottom:
+                # if both are bottom, merge pending sets
                 self.pending[e] = self.pending[e1] | self.pending[e2]
             else:
+                # if t2 is not bottom, handle pending set of e1
                 for x in self.pending[e1]:
                     self.join(e, x)
 
@@ -87,6 +105,7 @@ class Analyst:
             self.nodes[e] = t1
 
             if t2.is_bottom:
+                # if t1 is not bottom, handle pending set of t2
                 for x in self.pending[e2]:
                     self.join(e, x)
             else:
