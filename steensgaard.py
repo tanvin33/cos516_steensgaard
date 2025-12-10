@@ -12,6 +12,7 @@ import sys
 from sil_parser import *
 from analyst import *
 import time
+import pandas as pd
 
 
 def parse_program(program: str):
@@ -32,18 +33,19 @@ def parse_program(program: str):
         print("Parse Error:", e)
 
 
-def create_graph(uf, map):
-    # TODO Tanvi add comments + clean up code
+def create_graph(filename, uf, map):
+    # Create a new networkx directed graph
     G = nx.DiGraph()
-    sets = uf.get_sets()
-    print("SETS:", tuple(sets))
-
+    sets = uf.get_sets()  # get the ECR sets
+    print("SETS:", tuple(sets))  # for debugging
     for set in sets:
         for node in set:
-            G.add_node(tuple(set))
+            G.add_node(
+                tuple(set)
+            )  # each set is a node in the graph (named after all its members)
     for key, node in map.items():
         if node.tau is None:
-            continue
+            continue  # skip if tau is None (no points-to relation)
         else:
             # Find the set that contains node.uf_id for start and end
             start = "start"
@@ -54,8 +56,12 @@ def create_graph(uf, map):
                     end = tuple(set)
                 if node.uf_id in set:
                     start = tuple(set)
-            G.add_edge(start, end)
-    print("Start drawing")
+            G.add_edge(start, end)  # add directed edge from start to end
+
+    # Draw the graph
+    plt.figure()
+    plt.title(f"Storage Shape Graph for SIL Program: {filename}")
+
     pos = nx.planar_layout(G)
     nx.draw(
         G,
@@ -65,10 +71,8 @@ def create_graph(uf, map):
         font_weight="bold",
         node_size=1000,
     )
-    plt.title("Storage Shape Graph for SIL Program")
-    # plt.show()
-    # nx.draw(G, with_labels=True, font_weight="bold")
-    plt.show()
+    plt.savefig(f"{filename}_graph.png")  # Save the graph as a PNG file
+    plt.show()  # Show the graph, needs to be closed manually for program to continue
     return G
 
 
@@ -120,6 +124,21 @@ def run_steensgaard_analysis(variables, constraints):
     return analyst.uf, analyst.nodes
 
 
+def save_time_analysis(n, elapsed_time, filename="steensgaard_times.csv"):
+    df = pd.read_csv(filename)
+    new_row_df = pd.DataFrame(
+        [
+            {
+                "n": n,
+                "time": elapsed_time,
+            }
+        ]
+    )
+    # Concatenate the DataFrames
+    df = pd.concat([df, new_row_df], ignore_index=True)
+    df.to_csv(filename, index=False)
+
+
 def main(args=None):
     """
     The main entry point to start the analysis.
@@ -162,7 +181,8 @@ def main(args=None):
             print(
                 f"\nSteensgaard's analysis on {n} constraints completed in {elapsed_time:.6f} seconds."
             )
-            G = create_graph(uf, nodes)
+            save_time_analysis(n, elapsed_time)
+            G = create_graph(program_fn, uf, nodes)
             return 0
     else:
         print("No filename provided.")
