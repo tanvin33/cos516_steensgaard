@@ -103,6 +103,9 @@ def run_steensgaard_analysis(variables, constraints):
             case "op":
                 print("op", c["lhs"], c["operands"])
                 analyst.handle_op(c["lhs"], c["operand_variables"])
+            case "allocate":
+                print("allocate", c["lhs"])
+                analyst.handle_allocate(c["lhs"])
             case _:
                 print("Unrecognized constraint.")
 
