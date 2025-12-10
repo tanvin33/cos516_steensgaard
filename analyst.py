@@ -2,17 +2,15 @@ from union_find import UnionFind
 
 
 class TypeNode:
-    def __init__(self, uf_id):
-        # Union-Find ID
+    def __init__(self, uf_id=None, tau=None, lam=None):
         self.uf_id = uf_id
 
-        # Defaults to bottom
-        self.is_bottom = True
+        # Determine bottom status
+        # It is bottom if it has no structural info (tau or lam)
+        self.is_bottom = tau is None and lam is None
 
-        # None if bottom; otherwise, a UF ID
-        self.tau = None
-
-        # None if bottom; otherwise, zero or more UF IDs
+        self.tau = tau
+        self.lam = lam
         self.lam_args = None
         self.lam_rets = None
 
@@ -207,4 +205,24 @@ class Analyst:
             if t_x.tau != t_yi.tau:
                 self.join(t_x.tau, t_yi.tau)
 
+    def handle_allocate(self, x):
+        # x := allocate()
+        e_x = self.ecr(x)
+        t_x = self.nodes[e_x]
+        x_target = t_x.tau
+        if x_target is None:
+            return
+        if self.nodes[x_target].is_bottom:
+            fresh_var_1 = self.next_id
+            self.next_id += 1
+            self.new_type(fresh_var_1)  # Register new var in UF
 
+            fresh_var_2 = self.next_id
+            self.next_id += 1
+            self.new_type(fresh_var_2)  # Register new var in UF
+
+            new_type = TypeNode(self.next_id, tau=fresh_var_1, lam=[fresh_var_2])
+            self.next_id += 1
+
+            self.settype(x_target, new_type)
+            t_x.is_bottom = False
