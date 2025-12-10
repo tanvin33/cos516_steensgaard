@@ -11,6 +11,7 @@ import argparse
 import sys
 from sil_parser import *
 from analyst import *
+import time
 
 
 def parse_program(program: str):
@@ -145,15 +146,22 @@ def main(args=None):
             program = f.read()
             print(program)
             ast, constraints = parse_program(program)
-            print("ALL CONSTRAINTS:")
+            print("List of all constraints:")
             print(constraints)
-
+            n = len(constraints)  # number of constraints
+            print(f"Total number of constraints: {n}")
             all_variables = get_all_variables(ast)
             print(f"\nAll variable names encountered: {sorted(all_variables)}")
-
             print("Parsing completed.")
 
+            # Run Steensgaard's analysis, and time it (for performance measurement)
+            start_time = time.perf_counter()
             uf, nodes = run_steensgaard_analysis(all_variables, constraints)
+            end_time = time.perf_counter()
+            elapsed_time = end_time - start_time
+            print(
+                f"\nSteensgaard's analysis on {n} constraints completed in {elapsed_time:.6f} seconds."
+            )
             G = create_graph(uf, nodes)
             return 0
     else:
