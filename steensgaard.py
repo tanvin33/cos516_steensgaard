@@ -9,11 +9,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import argparse
 import sys
-import actions
 from sil_parser import *
-from union_find import UnionFind
 from analyst import *
-from type import TypeManager
 
 
 def parse_program(program: str):
@@ -47,18 +44,15 @@ def create_graph(uf, map):
         if node.tau is None:
             continue
         else:
-            # Find the set that contains node.uf_id
+            # Find the set that contains node.uf_id for start and end
             start = "start"
             end = "end"
-            if node.tau is None:
-                continue
-            else:
-                end_node = node.tau
-                for set in sets:
-                    if end_node in set:
-                        end = tuple(set)
-                    if node.uf_id in set:
-                        start = tuple(set)
+            end_node = node.tau
+            for set in sets:
+                if end_node in set:
+                    end = tuple(set)
+                if node.uf_id in set:
+                    start = tuple(set)
             G.add_edge(start, end)
     print("Start drawing")
     pos = nx.planar_layout(G)
@@ -75,6 +69,13 @@ def create_graph(uf, map):
     # nx.draw(G, with_labels=True, font_weight="bold")
     plt.show()
     return G
+
+
+def get_typing(variables, analyst):
+    for variable in variables:
+        ecr_v = analyst.ecr(variable)
+        type_var = analyst.nodes[ecr_v]
+        print(f"Variable {variable} (ECR {ecr_v}): TypeNode {type_var}")
 
 
 def run_steensgaard_analysis(variables, constraints):
@@ -109,11 +110,12 @@ def run_steensgaard_analysis(variables, constraints):
             case _:
                 print("Unrecognized constraint.")
 
-        print(analyst.nodes)
-        print(analyst.pending)
+        print("Pending:", analyst.pending)
+        get_typing(variables, analyst)
 
-        for key, node in analyst.nodes.items():
-            print(node.uf_id, "--> ", node.tau)
+    print("Final Types:")
+    get_typing(variables, analyst)
+
     return analyst.uf, analyst.nodes
 
 

@@ -15,14 +15,10 @@ class TypeNode:
         self.lam_rets = None
 
     def __str__(self):
-        return (
-            f"TypeNode(uf_id={self.uf_id}, is_bottom={self.is_bottom}, tau={self.tau}, "
-        )
+        return f"TypeNode(uf_id={self.uf_id}, is_bottom={self.is_bottom}, tau={self.tau}, lam={self.lam})"
 
     def __repr__(self):
-        return (
-            f"TypeNode(uf_id={self.uf_id}, is_bottom={self.is_bottom}, tau={self.tau}, "
-        )
+        return f"TypeNode(uf_id={self.uf_id}, is_bottom={self.is_bottom}, tau={self.tau}, lam={self.lam})"
 
 
 # Helpful information for following from Steensgaard's paper:
