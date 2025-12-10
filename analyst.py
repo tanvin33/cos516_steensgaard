@@ -208,34 +208,3 @@ class Analyst:
                 self.join(t_x.tau, t_yi.tau)
 
 
-def run_steensgaard_analysis(variables, constraints):
-    # variables is a set of variable names in the program
-    # constraints is a list of constraints parsed from the SIL program
-
-    analyst = Analyst()
-
-    # Initialize Type nodes for all variables
-    for v in variables:
-        analyst.new_type(v)
-
-    for c in constraints:
-        print("Processing constraint:", c)
-
-        match c["type"]:
-            case "assign":
-                print("assign", c["lhs"], c["rhs"])
-                analyst.handle_assign(c["lhs"], c["rhs"])
-            case "addr_of":
-                print("addr_of", c["lhs"], c["rhs"])
-                analyst.handle_addr_of(c["lhs"], c["rhs"])
-            case "deref":
-                print("deref", c["lhs"], c["rhs"])
-                analyst.handle_deref(c["lhs"], c["rhs"])
-            case _:
-                print("Unrecognized constraint.")
-
-        print(analyst.nodes)
-        print(analyst.pending)
-
-        for key, node in analyst.nodes.items():
-            print(node.uf_id, "--> ", node.tau)
