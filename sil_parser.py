@@ -43,6 +43,7 @@ def create_sil_parser():
     then_kw = pp.Keyword("then")
     else_kw = pp.Keyword("else")
     while_kw = pp.Keyword("while")
+    fun_kw = pp.Keyword("fun")
 
     op_kw = pp.Keyword("add") | pp.Keyword("negate") | pp.Keyword("multiply")
 
@@ -101,6 +102,58 @@ def create_sil_parser():
         lhs = tokens[0]
         return {"type": "allocate", "lhs": lhs}
 
+    def add_scope(statements, scope_prefix):
+        for stmt in statements:
+            if "lhs" in stmt:
+                stmt["lhs"] = scope_prefix + "_" + stmt["lhs"]
+            if "rhs" in stmt:
+                stmt["rhs"] = scope_prefix + "_" + stmt["rhs"]
+            if "operand_variables" in stmt:
+                for i, operand in enumerate(stmt["operand_variables"]):
+                    stmt["operand_variables"][i] = scope_prefix + "_" + operand
+            if "body" in stmt:
+                # Recurse into nested block bodies and keep the modified list
+                stmt["body"] = add_scope(stmt["body"], scope_prefix)
+        # Return the modified statements so callers can assign the result
+        return statements
+
+    def cmd_fun_def(tokens):
+        lhs = tokens["fun_name"]
+        params = tokens["params"].asList()
+        params_scope = [lhs + "_" + element for element in params]
+        returns = tokens["returns"].asList()
+        returns_scope = [lhs + "_" + element for element in returns]
+        body = tokens["body"].asList()[1:-1]  # remove braces
+
+        # rescope the variables in the body
+        add_scope(body, lhs)
+
+        return {
+            "type": "fun_def",
+            "lhs": lhs,
+            "params": params_scope,
+            "returns": returns_scope,
+            "body": body,
+        }
+
+    def cmd_fun_app(tokens):
+        lhs = tokens["lhs"]
+        fun_name = tokens["fun_name"]
+        args = tokens["args"].asList()
+        arg_variables = list()
+        for arg in args:
+            # Only add if it's an identifier (not a number)
+            if isinstance(arg, str) and arg[0].isalpha():
+                arg_variables.append(arg)
+
+        return {
+            "type": "fun_app",
+            "lhs": lhs,
+            "fun_name": fun_name,
+            "args": args,
+            "arg_variables": arg_variables,
+        }
+
     # We don't need any actions for any of the control flow commands
     # For if and skip, we just need to know what is inside those blocks
     # so we can parse them recursively
@@ -134,11 +187,43 @@ def create_sil_parser():
     store_stmt = (pp.Literal("*") + identifier + assign + operand).setParseAction(
         cmd_store
     )
+    # x := fun(f1…fn) → (r1…rm) {S*}
+    fun_def_stmt = (
+        identifier.setResultsName("fun_name")
+        + assign
+        + fun_kw
+        + lpar
+        + pp.delimitedList(identifier).setResultsName("params")
+        + rpar
+        + pp.Literal("->")
+        + lpar
+        + pp.delimitedList(identifier).setResultsName("returns")
+        + rpar
+        + block("body")
+    ).setParseAction(cmd_fun_def)
+
+    # x := p(y1,...,yn)
+    fun_app = (
+        identifier.setResultsName("lhs")
+        + assign
+        + identifier.setResultsName("fun_name")
+        + lpar
+        + pp.delimitedList(operand).setResultsName("args")
+        + rpar
+    ).setParseAction(cmd_fun_app)
+
     # x := y
     assign_stmt = (identifier + assign + operand).setParseAction(cmd_assign)
 
     assignment = (
-        op_stmt | allocate_stmt | addr_of_stmt | deref_stmt | store_stmt | assign_stmt
+        op_stmt
+        | allocate_stmt
+        | addr_of_stmt
+        | deref_stmt
+        | store_stmt
+        | fun_def_stmt
+        | fun_app
+        | assign_stmt
     )
 
     # Handle the control flow statements (if, while , skip)
@@ -157,15 +242,15 @@ def create_sil_parser():
     ).setParseAction(
         lambda tokens: {
             "type": "if",
-            "then": tokens["then"].as_list()[1:-1],
-            "else": tokens["else"].as_list()[1:-1],
+            "then": tokens["then"].asList()[1:-1],
+            "else": tokens["else"].asList()[1:-1],
         },
     )
 
     while_stmt = (
         while_kw + lpar + pp.SkipTo(rpar) + rpar + block("body")
     ).setParseAction(
-        lambda tokens: {"type": "while", "body": tokens["body"].as_list()[1:-1]},
+        lambda tokens: {"type": "while", "body": tokens["body"].asList()[1:-1]},
     )
 
     statement <<= (if_stmt | while_stmt | skip_stmt | assignment) + semicolon | comment
@@ -188,6 +273,9 @@ def get_all_constraints(ast):
             )
         elif stmt["type"] == "while":
             constraints = constraints + get_all_constraints(stmt["body"])
+        elif stmt["type"] == "fun_def":
+            constraints = constraints + get_all_constraints(stmt["body"])
+            constraints.append(stmt)
         elif stmt["type"] == "skip":
             continue
         else:
@@ -211,6 +299,19 @@ def get_all_variables(ast):
             extract_variables_from_stmt_list(stmt["else"])
         elif stmt["type"] == "while":
             extract_variables_from_stmt_list(stmt["body"])
+        elif stmt["type"] == "fun_def":
+            # Add function name, params, and returns
+            variables.add(stmt["lhs"])
+            for param in stmt["params"]:
+                variables.add(param)
+            for ret in stmt["returns"]:
+                variables.add(ret)
+            extract_variables_from_stmt_list(stmt["body"])
+        elif stmt["type"] == "fun_app":
+            variables.add(stmt["lhs"])
+            variables.add(stmt["fun_name"])
+            for arg in stmt["arg_variables"]:
+                variables.add(arg)
         elif stmt["type"] == "skip":
             pass
         else:
@@ -223,6 +324,11 @@ def get_all_variables(ast):
                 for operand in stmt["operand_variables"]:
                     # Only add if it's an identifier (not a number)
                     variables.add(operand)
+            if "fun_name" in stmt:
+                variables.add(stmt["fun_name"])
+            if "args" in stmt:
+                for arg in stmt["arg_variables"]:
+                    variables.add(arg)
 
     def extract_variables_from_stmt_list(stmt_list):
         """Helper function to extract variables from a list of statements."""

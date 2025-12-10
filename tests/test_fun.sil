@@ -1,0 +1,4 @@
+# Simple function test
+y := &x;
+sum := fun(a,b) -> (r) {r := add(a,b); a := b;};
+z := sum(s,t);

@@ -1,0 +1,8 @@
+# More complex function test
+y := &x;
+sum := fun(a,b) -> (r) {
+  while (x < 10) {
+    x := negate(x);
+  };
+};
+z := frac(s,t);

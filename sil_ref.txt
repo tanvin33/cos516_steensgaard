@@ -21,7 +21,7 @@ S ∈ Statement(V) ::=
 | *x := y [We call this store]
 | x := op(y1,...,yn) [We call this op]
 | x := allocate(y) [We call this allocate]
-| x := fun(f1…fn) → (r1…rm) S*
+| x := fun(f1…fn) -> (r1…rm) {S*}
 | x := p(y1,...,yn)
 | skip
 | if (c) then {S1} else {S2}
