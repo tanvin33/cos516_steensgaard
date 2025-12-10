@@ -77,88 +77,41 @@ def create_graph(uf, map):
     return G
 
 
-def main_old(args=None):
-    """
-    The main entry point to start the analysis.
-    Takes in command-line arguments for the filename of a SIL program.
-    Returns the completed analysis.
-    """
+def run_steensgaard_analysis(variables, constraints):
+    # variables is a set of variable names in the program
+    # constraints is a list of constraints parsed from the SIL program
 
-    parser = argparse.ArgumentParser(
-        description="A python implementation of Steensgaard's Points-to Analysis."
-    )
+    analyst = Analyst()
 
-    # Command line arguments
-    parser.add_argument(
-        "-fn", "--filename", type=str, help="Specify a filename for a SIL program."
-    )
+    # Initialize Type nodes for all variables
+    for v in variables:
+        analyst.new_type(v)
 
-    # Parse the arguments
-    # If args is None, parse_args will default to sys.argv[1:]
-    program_fn = parser.parse_args(args).filename
+    for c in constraints:
+        print("Processing constraint:", c)
 
-    # Access the parsed arguments
-    if program_fn:
-        with open(program_fn, "r") as f:
-            program = f.read()
-            print(program)
-            ast, constraints = parse_program(program)
-            print("ALL CONSTRAINTS:")
-            print(constraints)
-            print("Parsing completed.")
+        match c["type"]:
+            case "assign":
+                print("assign", c["lhs"], c["rhs"])
+                analyst.handle_assign(c["lhs"], c["rhs"])
+            case "addr_of":
+                print("addr_of", c["lhs"], c["rhs"])
+                analyst.handle_addr_of(c["lhs"], c["rhs"])
+            case "deref":
+                print("deref", c["lhs"], c["rhs"])
+                analyst.handle_deref(c["lhs"], c["rhs"])
+            case "op":
+                print("op", c["lhs"], c["operands"])
+                analyst.handle_op(c["lhs"], c["operand_variables"])
+            case _:
+                print("Unrecognized constraint.")
 
-            # Manage type nodes
-            manager = TypeManager()
+        print(analyst.nodes)
+        print(analyst.pending)
 
-            # Map variable names to type nodes
-            map = {}
-
-            for c in constraints:
-                # Find Type node of LHS variable
-                x = map.get(c["lhs"])
-
-                # Instantiate Type if LHS variable is new
-                if x is None:
-                    x = manager.new_alpha(c["lhs"])
-                    map[c["lhs"]] = x
-
-                # Accommodate operations with no RHS variable
-                y = None
-
-                # Find type node of RHS variable
-                if "rhs" in c:
-                    y = map.get(c["rhs"])
-
-                    # Instantiate Type node if RHS variable is new
-                    if y is None:
-                        y = manager.new_alpha(c["rhs"])
-                        map[c["rhs"]] = y
-
-                match c["type"]:
-                    case "assign":
-                        print("assign", c["lhs"], c["rhs"])
-                        actions.constraint_assign(manager, x, y)
-                    case "addr_of":
-                        print("addr_of", c["lhs"], c["rhs"])
-                        actions.constraint_addr_of(manager, x, y)
-                    case "deref":
-                        print("deref", c["lhs"], c["rhs"])
-                        actions.constraint_deref(manager, x, y)
-                    case "store":
-                        print("store", c["lhs"], c["rhs"])
-                        actions.constraint_store(manager, x, y)
-                    case _:
-                        print("Unrecognized constraint.")
-                print(manager.uf)
-                print(map)
-                for key, node in map.items():
-                    print(key, node.uf_id, node.tau_ref, "<--")
-
-            G = create_graph(manager.uf, map)
-            return 0
-    else:
-        print("No filename provided.")
-        return -1
+        for key, node in analyst.nodes.items():
+            print(node.uf_id, "--> ", node.tau)
+    return analyst.uf, analyst.nodes
 
 
 def main(args=None):
@@ -189,49 +142,14 @@ def main(args=None):
             ast, constraints = parse_program(program)
             print("ALL CONSTRAINTS:")
             print(constraints)
+
+            all_variables = get_all_variables(ast)
+            print(f"\nAll variable names encountered: {sorted(all_variables)}")
+
             print("Parsing completed.")
 
-            analyst = Analyst()
-
-            for c in constraints:
-                print("Processing constraint:", c)
-
-                # Find Type node of LHS variable
-                x = analyst.nodes.get(c["lhs"])
-
-                # Instantiate Type if LHS variable is new
-                if x is None:
-                    x = analyst.new_type(c["lhs"])
-
-                # Accommodate operations with no RHS variable
-                y = None
-
-                # Find type node of RHS variable
-                if "rhs" in c:
-                    y = analyst.nodes.get(c["rhs"])
-
-                    # Instantiate Type node if RHS variable is new
-                    if y is None:
-                        y = analyst.new_type(c["rhs"])
-
-                match c["type"]:
-                    case "assign":
-                        print("assign", c["lhs"], c["rhs"])
-                        analyst.handle_assign(c["lhs"], c["rhs"])
-                    case "addr_of":
-                        print("addr_of", c["lhs"], c["rhs"])
-                        analyst.handle_addr_of(c["lhs"], c["rhs"])
-                    case "deref":
-                        print("deref", c["lhs"], c["rhs"])
-                        analyst.handle_deref(c["lhs"], c["rhs"])
-                    case _:
-                        print("Unrecognized constraint.")
-                print(analyst.uf)
-                print(analyst.nodes)
-                for key, node in analyst.nodes.items():
-                    print(key, node.uf_id, node.tau, "<--")
-
-            G = create_graph(analyst.uf, analyst.nodes)
+            uf, nodes = run_steensgaard_analysis(all_variables, constraints)
+            G = create_graph(uf, nodes)
             return 0
     else:
         print("No filename provided.")
