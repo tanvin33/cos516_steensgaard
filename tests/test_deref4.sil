@@ -1,0 +1,8 @@
+x := &x1;
+
+# at this point in time we have  x --> x1 and node a
+# when we dereference, we are saying x:=*a, 
+# BUT a is a bottom type 
+# thus we create a new type (assume a is a pointer) and then call settype accordingly
+
+x := *a; 

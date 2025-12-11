@@ -167,7 +167,6 @@ class Analyst:
         if t1.tau != t2.tau:
             print("Assign, taus not equal")
             self.cjoin(self.ecr(t1.tau), self.ecr(t2.tau))
-            # self.cjoin(self.ecr(t1.tau), self.ecr(t2.tau))
 
     def handle_addr_of(self, x, y):
         # handle the assignment x := &y
@@ -200,8 +199,15 @@ class Analyst:
         t1 = self.nodes[e1]
 
         if tau_2 is None:
-            print("Deref: y has no target, cannot proceed.")
-            return
+            # y has no target, but in order to deref, it must point to something
+            print("Deref: y has no target.")
+            fresh_var = self.next_id
+            self.next_id += 1
+            self.new_type(fresh_var)  # Register new var in UF
+            t2.tau = fresh_var
+            t2.is_bottom = False
+            tau_2 = t2.tau
+
         # if y is bottom, create a fresh varaible as its "target"
         if self.nodes[tau_2].is_bottom:
             self.settype(tau_2, t1)
