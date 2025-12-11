@@ -78,46 +78,37 @@ class Analyst:
 
     # e1 and e2 are UF IDs
     def join(self, e1, e2):
-        # Get TypeNodes for the equivalence classes of e1 and e2
-        e1 = self.ecr(e1)
-        e2 = self.ecr(e2)
         t1 = self.nodes[e1]
         t2 = self.nodes[e2]
 
-        # Union e1 and e2
-        self.uf.union(e1, e2)
-        e = self.uf.find(e1)  # Or return from union()
+        e = self.uf.union(e1, e2)
 
         if t1.is_bottom:
-            self.nodes[e] = t2
+            #self.nodes[e] = t2
+            self.nodes[e] = self.assign_type(e, t2)
 
             if t2.is_bottom:
-                # if both are bottom, merge pending sets
                 self.pending[e] = self.pending[e1] | self.pending[e2]
             else:
-                # if t2 is not bottom, handle pending set of e1
                 for x in self.pending[e1]:
                     self.join(e, x)
-
         else:
-            self.nodes[e] = t1
+            #self.nodes[e] = t1
+            self.nodes[e] = self.assign_type(e, t1)
 
             if t2.is_bottom:
-                # if t1 is not bottom, handle pending set of t2
                 for x in self.pending[e2]:
                     self.join(e, x)
             else:
-                self.unify(t1, t2)
+                self.unify_tau(t1, t2)
 
     # t1 and t2 are TypeNodes
-    def unify(self, t1, t2):
-        if t1.tau is not None and t2.tau is not None:
-            if t1.tau != t2.tau:
-                self.join(t1.tau, t2.tau)
-        elif t1.tau is None and t2.tau is not None:
-            t1.tau = t2.tau
-        elif t2.tau is None and t1.tau is not None:
-            t2.tau = t1.tau
+    def unify_tau(self, type_e1, type_e2):
+        tau1 = self.get_tau(type_e1)
+        tau2 = self.get_tau(type_e2)
+
+        if tau1 != tau2:
+            self.join(tau1, tau2)
 
         # TODO: unify lambda types as well, currently not handled
 
@@ -135,24 +126,30 @@ class Analyst:
     # e1 and e2 are UF IDs
     def cjoin(self, e1, e2):
         print("cjoin", e1, e2)
-        t2 = self.nodes[e2]
+        type_e2 = self.nodes[e2]
 
-        if t2.is_bottom:
+        if type_e2.is_bottom:
             print("t2 is bottom, adding pending")
             self.pending[e2] = {e1} | self.pending[e2]
         else:
             print("t2 is not bottom, joining")
             self.join(e1, e2)
 
+    #TODO: MUST: figure out which of the following options produces
+    # the right shape graph!!!
+    def assign_type(self, e, t):
+        type_e = self.new_type(e)
+        type_e.tau = t.tau
+        return type_e
+
+        # Or alternatively just return t
+        #return t
+
     # e1 is a UF ID and t is a TypeNode
     def settype(self, e, t):
         print("Set type", e, "to", t)
 
-        type_e = self.new_type(e)
-
-        type_e.tau = t.tau
-
-        # TODO: Lambda too
+        self.nodes[e] = self.assign_type(e, t)
 
         for x in self.pending[e]:
             self.join(e, x)
@@ -259,3 +256,31 @@ class Analyst:
 
         if self.nodes[tau].is_bottom:
             self.settype(tau, self.make_ecr_type())
+
+    def handle_store(self, x, y):
+        ecr_x = self.ecr(x)
+        type_x = self.nodes[ecr_x]
+        tau1 = self.get_tau(type_x)
+
+        ecr_y = self.ecr(y)
+        type_y = self.nodes[ecr_y]
+        tau2 = self.get_tau(type_y)
+
+        type_tau1 = self.nodes[tau1]
+
+        if type_tau1.is_bottom:
+            self.settype(tau1, type_y)
+        else:
+            tau3 = self.get_tau(type_tau1)
+            if tau2 != tau3:
+                self.cjoin(tau2, tau3)
+            
+            # TODO: Lambda too
+
+    def handle_fun(self, x, args, rets):
+        print("unimplemented")
+        # TODO: Lambda
+
+    def handle_p(self, x, args, rets):
+        print("unimplemented")
+        # TODO: Lambda
