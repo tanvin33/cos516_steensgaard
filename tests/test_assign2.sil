@@ -1,0 +1,6 @@
+# Test of assign when nodes are not pointers
+a := b;
+
+# a and b are both bottom, we assume they are pointers, and merge their types 
+# storage graph should have 4 nodes, 
+# Not 3 because the types a and b both point to are bottom we add to pending set

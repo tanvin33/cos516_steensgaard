@@ -1,0 +1,4 @@
+# Test of assign when nodes are not pointers
+b := &b1;
+b1 := &b2;
+a := b;
