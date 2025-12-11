@@ -14,14 +14,14 @@ class TypeNode:
     def __init__(self, uf_id=None, tau=None, lam=None):
         self.uf_id = uf_id
 
-        # Determine bottom status
-        # It is bottom if it has no structural info (tau or lam)
-        self.is_bottom = tau is None and lam is None
-
         self.tau = tau
         self.lam = lam
         self.lam_args = None
         self.lam_rets = None
+
+    @property
+    def is_bottom(self):
+        return self.tau is None and self.lam is None
 
     def __str__(self):
         return f"TypeNode(uf_id={self.uf_id}, is_bottom={self.is_bottom}, tau={self.tau}, lam={self.lam})"
@@ -112,7 +112,6 @@ class Analyst:
                 self.unify(t1, t2)
 
     # t1 and t2 are TypeNodes
-    # TODO: currently only handles tau, need to handle lam too
     def unify(self, t1, t2):
         if t1.tau is not None and t2.tau is not None:
             if t1.tau != t2.tau:
@@ -121,6 +120,8 @@ class Analyst:
             t1.tau = t2.tau
         elif t2.tau is None and t1.tau is not None:
             t2.tau = t1.tau
+
+        # TODO: unify lambda types as well, currently not handled
 
         # if len(t1.lam_args) != len(t2.lam_args) or len(t1.lam_rets) != len(t2.lam_rets):
         #     print("ERROR")
@@ -164,6 +165,19 @@ class Analyst:
         print("Types before:", t1, t2)
         print("Taus before:", t1.tau, t2.tau)
 
+        if t1.tau is None:
+            print("Assign: x has no target.")
+            fresh_var = self.next_id
+            self.next_id += 1
+            self.new_type(fresh_var)  # Register new var in UF
+            t1.tau = fresh_var
+        if t2.tau is None:
+            print("Assign: y has no target.")
+            fresh_var = self.next_id
+            self.next_id += 1
+            self.new_type(fresh_var)  # Register new var in UF
+            t2.tau = fresh_var
+
         if t1.tau != t2.tau:
             print("Assign, taus not equal")
             self.cjoin(self.ecr(t1.tau), self.ecr(t2.tau))
@@ -179,7 +193,6 @@ class Analyst:
         # If t1 is ⊥, set its type to point to e2 (and make it non-bottom)
         if t1.is_bottom:
             t1.tau = tau_2
-            t1.is_bottom = False
             # Satisfy any pending assignments on e1
             self.settype(e1, t1)
 
@@ -205,7 +218,6 @@ class Analyst:
             self.next_id += 1
             self.new_type(fresh_var)  # Register new var in UF
             t2.tau = fresh_var
-            t2.is_bottom = False
             tau_2 = t2.tau
 
         # if y is bottom, create a fresh varaible as its "target"
@@ -248,4 +260,3 @@ class Analyst:
             self.next_id += 1
 
             self.settype(x_target, new_type)
-            t_x.is_bottom = False
