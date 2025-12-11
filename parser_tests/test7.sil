@@ -1,0 +1,5 @@
+# test whether assigning to anumber generates constraints.
+
+x := y;
+x := 0; 
+

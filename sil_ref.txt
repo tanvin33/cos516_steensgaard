@@ -5,8 +5,8 @@ Notes:
 - You can add comments to SIL files starting with # and ending at the end of the line
 
 V is the set of variable names
-x, y, f, r ∈ V ∪ Real Numbers
-p∈ V
+y, ∈ V ∪ Real Numbers
+x, p, f, r∈ V
 
 o ∈ op(V) ::= add  | negate | multiply
 
