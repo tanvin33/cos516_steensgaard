@@ -14,9 +14,11 @@ class TypeNode:
         self.uf_id = uf_id
 
         self.tau = tau
+
         self.lam = lam
-        self.lam_args = None
-        self.lam_rets = None
+
+        self.lam_args = []
+        self.lam_rets = []
 
     @property
     def is_bottom(self):
@@ -75,6 +77,11 @@ class Analyst:
         self.pending[uf_id] = set()
 
         return node
+    
+    def fresh_type(self):
+        new_id = self.next_id
+        self.next_id += 1
+        return self.new_type(new_id)  # Register new type in UF
 
     # e1 and e2 are UF IDs
     def join(self, e1, e2):
@@ -105,10 +112,50 @@ class Analyst:
     # t1 and t2 are TypeNodes
     def unify_tau(self, type_e1, type_e2):
         tau1 = self.get_tau(type_e1)
+        lam1 = self.get_lam(type_e1)
+
         tau2 = self.get_tau(type_e2)
+        lam2 = self.get_lam(type_e2)
 
         if tau1 != tau2:
             self.join(tau1, tau2)
+
+        if lam1 != lam2:
+            self.join(lam1, lam2)
+
+    def unify_lam(self, type_e1, type_e2):
+        lam_args_e1 = type_e1.lam_args
+        lam_args_e2 = type_e2.lam_args
+
+        for i in range(len(lam_args_e1)):
+            tau1 = self.get_tau(lam_args_e1[i]) #self.get_tau(lam_args_e1[i].uf_id)
+            lam1 = self.get_lam(lam_args_e1[i])
+
+            tau2 = self.get_tau(lam_args_e2[i])
+            lam2 = self.get_lam(lam_args_e2[i])
+
+            if tau1 != tau2:
+                self.join(tau1, tau2)
+
+            if lam1 != lam2:
+                self.join(lam1, lam2)
+
+        lam_rets_e1 = type_e1.lam_rets
+        lam_rets_e2 = type_e2.lam_rets
+
+        for i in range(len(lam_rets_e1)):
+            tau1 = self.get_tau(lam_rets_e1[i]) #self.get_tau(lam_args_e1[i].uf_id)
+            lam1 = self.get_lam(lam_rets_e1[i])
+
+            tau2 = self.get_tau(lam_rets_e2[i])
+            lam2 = self.get_lam(lam_rets_e2[i])
+
+            if tau1 != tau2:
+                self.join(tau1, tau2)
+
+            if lam1 != lam2:
+                self.join(lam1, lam2)
+
 
         # TODO: unify lambda types as well, currently not handled
 
@@ -140,6 +187,7 @@ class Analyst:
     def assign_type(self, e, t):
         type_e = self.new_type(e)
         type_e.tau = t.tau
+        type_e.lam = t.lam
         return type_e
 
         # Or alternatively just return t
@@ -154,17 +202,10 @@ class Analyst:
         for x in self.pending[e]:
             self.join(e, x)
 
-    # Create a type to represent an implicit points-to relation (reference) from type t1
-    def resolve_tau(self, type_):
-        new_id = self.next_id
-        self.next_id += 1
-        self.new_type(new_id)  # Register new type in UF
-        type_.tau = new_id
-
     # Helper function for getting a tau reference from a type
     def get_tau(self, type_):
         if type_.tau is None:
-            self.resolve_tau(type_)
+            type_.tau = self.fresh_type().uf_id
         return type_.tau
 
     def handle_assign(self, x, y):
@@ -172,10 +213,12 @@ class Analyst:
         ecr_x = self.ecr(x)
         type_x = self.nodes[ecr_x]
         tau1 = self.get_tau(type_x)
+        lam1 = self.get_lam(type_x)
 
         ecr_y = self.ecr(y)
         type_y = self.nodes[ecr_y]
         tau2 = self.get_tau(type_y)
+        lam2 = self.get_lam(type_y)
 
         print("Handling assign:", x, y)
         print("Types before:", type_x, type_y)
@@ -184,6 +227,9 @@ class Analyst:
         if tau1 != tau2:
             print("Assign, taus not equal")
             self.cjoin(tau1, tau2)
+
+        if lam1 != lam2:
+            self.cjoin(lam1, lam2)
 
     def handle_addr_of(self, x, y):
         # handle the assignment x := &y
@@ -206,6 +252,7 @@ class Analyst:
         ecr_x = self.ecr(x)
         type_x = self.nodes[ecr_x]
         tau1 = self.get_tau(type_x)
+        lam1 = self.get_lam(type_x)
 
         ecr_y = self.ecr(y)
         type_y = self.nodes[ecr_y]
@@ -217,27 +264,37 @@ class Analyst:
             self.settype(tau2, type_x)
         else:
             tau3 = self.get_tau(type_tau2)
+            lam3 = self.get_lam(type_tau2)
             if tau1 != tau3:
                 self.cjoin(tau1, tau3)
-            # TODO Lambda as well
+            if lam1 != lam3:
+                self.cjoin(lam1, lam3)
 
     def handle_op(self, x, operands):
         for y in operands:
             ecr_x = self.ecr(x)
             type_x = self.nodes[ecr_x]
             tau1 = self.get_tau(type_x)
+            lam1 = self.get_lam(type_x)
 
             ecr_y = self.ecr(y)
             type_y = self.nodes[ecr_y]
             tau2 = self.get_tau(type_y)
+            lam2 = self.get_lam(type_y)
 
             if tau1 != tau2:
                 self.cjoin(tau1, tau2)
-            
-            # TODO: Lambdas too
+            if lam1 != lam2:
+                self.cjoin(lam1, lam2)
 
     # Make a dummy type to store new ECRs for allocate()
     def make_ecr_type(self):
+        type_ = TypeNode("_")
+        type_.tau = self.fresh_type().uf_id
+        type_.lam = self.fresh_type().uf_id
+        return type_
+
+        '''
         e1 = self.next_id
         self.next_id += 1
         self.new_type(e1)
@@ -247,6 +304,7 @@ class Analyst:
         type_ = TypeNode("_")
         type_.tau = e1
         return type_
+        '''
 
     def handle_allocate(self, x):
         # x := allocate()
@@ -265,6 +323,7 @@ class Analyst:
         ecr_y = self.ecr(y)
         type_y = self.nodes[ecr_y]
         tau2 = self.get_tau(type_y)
+        lam2 = self.get_lam(type_y)
 
         type_tau1 = self.nodes[tau1]
 
@@ -272,15 +331,131 @@ class Analyst:
             self.settype(tau1, type_y)
         else:
             tau3 = self.get_tau(type_tau1)
+            lam3 = self.get_lam(type_tau1)
             if tau2 != tau3:
-                self.cjoin(tau2, tau3)
+                self.cjoin(tau3, tau2)
+            if lam2 != lam3:
+                self.cjoin(lam3, lam2)
             
             # TODO: Lambda too
 
-    def handle_fun(self, x, args, rets):
-        print("unimplemented")
-        # TODO: Lambda
+    # Helper function for getting a lambda reference from a type
+    def get_lam(self, type_):
+        if type_.lam is None: # if x has no lambda value
+            type_.lam = self.fresh_type().uf_id
+        return type_.lam
+        
+    def get_alpha(self, e):
+        if e not in self.nodes:
+            e = self.fresh_type().uf_id
+        return e
+    
+    def make_lam_type(self, args, rets):
+        # TODO: Figure out if type should be fresh (calls new_type, 
+        # ends up in nodes) or should just be dummy type for copying,
+        # based conclusions about the assign_type() correct implementation
 
-    def handle_p(self, x, args, rets):
-        print("unimplemented")
-        # TODO: Lambda
+        # Currently it seems more elegant to call fresh_type here, and then
+        # change assign_type to return t without calling new_type.
+        
+        #type_ = self.fresh_type()
+        #type_.lam_args = args
+        #type_.lam_rets = rets
+
+        #return type_
+
+        type_ = TypeNode("_")
+        type_.lam_args = args
+        type_.lam_rets = rets
+        return type_
+
+    # Must create alpha nodes, then refer to them by ECR
+    def handle_fun_def(self, x, f, r):
+        ecr_x = self.ecr(x)
+        type_x = self.nodes[ecr_x]
+
+        lam = self.get_lam(type_x)
+        type_lam = self.nodes[lam] # This requires lam to be added to nodes
+
+        if type_lam.is_bottom:
+            alpha_f = []
+            alpha_r = []
+
+            for f_i in f:
+                alpha_f_i = self.get_alpha(f_i)
+                alpha_f.append(alpha_f_i)
+
+            for r_i in r:
+                alpha_r_i = self.get_alpha(r_i)
+                alpha_r.append(alpha_r_i)
+
+            # TODO: Should not store ECRs but actual nodes
+            self.settype(lam, self.make_lam_type(alpha_f, alpha_r))
+
+        else:
+            #lam_args = type_lam.lam_args
+            #lam_rets = type_lam.lam_rets
+
+            for i in range(len(f)):
+                alpha_i = type_lam.lam_args[i]
+                tau1 = self.get_tau(alpha_i)
+                lam1 = self.get_lam(alpha_i)
+
+                ecr_f_i = self.ecr(f[i])
+                type_f_i = self.nodes[ecr_f_i]
+                tau2 = self.get_tau(type_f_i)
+                lam2 = self.get_lam(type_f_i)
+
+                # Note distinct order below
+                if tau1 != tau2:
+                    self.join(tau2, tau1)
+
+                if lam1 != lam2:
+                    self.join(lam2, lam1)
+
+            for i in range(len(r)):
+                alpha_i = type_lam.lam_rets[i]
+                tau1 = self.get_tau(alpha_i)
+                lam1 = self.get_lam(alpha_i)
+
+                ecr_r_i = self.ecr(r[i])
+                type_r_i = self.nodes[ecr_r_i]
+                tau2 = self.get_tau(type_r_i)
+                lam2 = self.get_lam(type_r_i)
+
+                # Note distinct order above
+                if tau1 != tau2:
+                    self.join(tau1, tau2)
+
+                if lam1 != lam2:
+                    self.join(lam1, lam2)
+    
+    '''
+    def handle_fun_app(self, p, y):
+        ecr_p = self.ecr(p)
+        type_p = self.nodes[ecr_p]
+
+        lam = self.get_lam(type_p)
+        type_lam = self.nodes[lam]
+
+        if type_lam.is_bottom:
+            alpha_args = []
+
+            for i in y:
+                alpha_i = self.make_ecr_type()
+                alpha.append(alpha_i)
+
+            self.settype(lam, self.make_lam_type(alpha))
+
+            #self.settype(lam, ***)
+    '''
+    '''
+            for arg in type_lam.lam_args:
+                tau1 = arg.tau
+                lam1 = arg.lam
+
+                ecr_x = self.ecr(x)
+                type_x = self.nodes[ecr_x]
+
+            for ret in type_lam.lam_rets:
+    '''

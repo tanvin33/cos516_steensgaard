@@ -140,6 +140,12 @@ def run_steensgaard_analysis(variables, constraints):
             case "store":
                 print("store", c["lhs"], c["rhs"])
                 analyst.handle_store(c["lhs"], c["rhs"])
+            case "fun_def":
+                print("fun_def", c["lhs"], c["params"], c["returns"])
+                analyst.handle_fun_def(c["lhs"], c["params"], c["returns"])
+            case "fun_app":
+                print("fun_app", c["lhs"], c["fun_name"], c["args"])
+                analyst.handle_fun_def(c["lhs"], c["fun_name"], c["args"])
             case _:
                 print("Unrecognized constraint.")
 
