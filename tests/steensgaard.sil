@@ -1,11 +1,4 @@
 # Example from Steensgaard's paper
-# The final storage graph should have 5 nodes 
-# a --> (x,z)
-# b --> y
-# c --> y 
-# y --> (x,z)
-# x,z is a bottom type (points nowhere)
-# we ignore any variables in if() or while() conditions as they don't generate constraints
 
 a := &x;
 b := &y;
@@ -15,3 +8,11 @@ if (p) then {
   y := &x;
 };
 c := &y;
+
+# The final storage graph should have 5 nodes 
+# a --> (x,z)
+# b --> y
+# c --> y 
+# y --> (x,z)
+# x,z is a bottom type (points nowhere)
+# we ignore any variables in if() or while() conditions as they don't generate constraints
