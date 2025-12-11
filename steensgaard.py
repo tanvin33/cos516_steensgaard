@@ -133,8 +133,8 @@ def run_steensgaard_analysis(filename, variables, constraints, graph_all=False):
     n_constraints = len(constraints)
 
     if graph_all and n_constraints > 0:
-        cols = int(math.ceil(math.sqrt(n_constraints)))
-        rows = int(math.ceil(n_constraints / cols))
+        cols = int(math.ceil(math.sqrt(n_constraints + 1)))
+        rows = int(math.ceil((n_constraints + 1) / cols))
         fig, axs = plt.subplots(rows, cols, figsize=(cols * 4, rows * 3))
         # Normalize axs to a flat list for easy indexing
         if isinstance(axs, plt.Axes):

@@ -1,0 +1,9 @@
+# multiply 3 and 5 only using additon
+a := 3;
+b := 5;
+r := 0;
+i := 0;
+while(i < a){
+  r:= add(r,b);
+  i := add(i,1);
+};
