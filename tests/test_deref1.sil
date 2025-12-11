@@ -1,0 +1,12 @@
+a := &b; # a points to b 
+c := &d; # c points to d
+
+# at this point in time we have a --> b  c-->d , x points nowhere (is bottom)
+# when we dereference, we are saying x:=*a, so x := b 
+# thus we want to merge the equivalence classes of the children of x and b
+# BUT b is a bottom node, so we just change its type using settype
+
+x := *a; # x with what a points to which is b 
+
+
+# result should be 4 nodes: a, b, c, d, x

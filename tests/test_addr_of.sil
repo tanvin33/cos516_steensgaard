@@ -1,0 +1,10 @@
+# test program for commands of the format y := &x;
+
+y := &x; # y is a pointer to x, 2 nodes with y-->x relation
+x := &z; # 3 nodes with a relation y --> x --> z
+
+# now we look at some cases that require joining
+
+x := &a; # still 3 nodes, za should be a node
+y := &b; # still 3 nodes, xb is a node, pointing to za
+c := &b; # 4 nodes, c should also point to xb

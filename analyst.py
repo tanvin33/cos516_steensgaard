@@ -135,6 +135,7 @@ class Analyst:
 
     # e1 and e2 are UF IDs
     def cjoin(self, e1, e2):
+        print("cjoin", e1, e2)
         t2 = self.nodes[e2]
 
         if t2.is_bottom:
@@ -165,7 +166,7 @@ class Analyst:
 
         if t1.tau != t2.tau:
             print("Assign, taus not equal")
-            self.join(self.ecr(t1.tau), self.ecr(t2.tau))
+            self.cjoin(self.ecr(t1.tau), self.ecr(t2.tau))
             # self.cjoin(self.ecr(t1.tau), self.ecr(t2.tau))
 
     def handle_addr_of(self, x, y):
@@ -191,22 +192,23 @@ class Analyst:
 
     def handle_deref(self, x, y):
         # x := *y
-        e_y = self.ecr(y)
-        node_y = self.nodes[e_y]
+        e2 = self.ecr(y)
+        t2 = self.nodes[e2]
+        tau_2 = t2.tau
 
+        e1 = self.ecr(x)
+        t1 = self.nodes[e1]
+
+        if tau_2 is None:
+            print("Deref: y has no target, cannot proceed.")
+            return
         # if y is bottom, create a fresh varaible as its "target"
-        if node_y.is_bottom:
-            fresh_var = self.next_id
-            self.next_id += 1
-            self.new_type(fresh_var)  # Register new var in UF
-
-            node_y.is_bottom = False
-            node_y.tau = fresh_var
-
-        # Now y is guaranteed to have a target. Join the target wtih x
-        # Note: If y was already a pointer, we just join x with its existing target
-        e_x = self.ecr(x)
-        self.join(e_x, node_y.tau)
+        if self.nodes[tau_2].is_bottom:
+            self.settype(tau_2, t1)
+        else:
+            t3 = self.nodes[tau_2]
+            if t3.tau != t1.tau:
+                self.cjoin(t1.tau, t3.tau)
 
     def handle_op(self, x, operands):
         e_x = self.ecr(x)
@@ -216,9 +218,9 @@ class Analyst:
             print("Operand:", operand)
             e_yi = self.ecr(operand)
             t_yi = self.nodes[e_yi]
-            print("Joining", t_x.tau, "and", t_yi.tau)
+            print("c-Joining", t_x.tau, "and", t_yi.tau)
             if t_x.tau != t_yi.tau:
-                self.join(t_x.tau, t_yi.tau)
+                self.cjoin(t_x.tau, t_yi.tau)
 
     def handle_allocate(self, x):
         # x := allocate()

@@ -1,0 +1,11 @@
+a := &b; # a points to b 
+b := &b1;
+x := &x1;
+
+# at this point in time we have a --> b -->b1 
+# also, x --> x1 
+# when we dereference, we are saying x:=*a, so x := b 
+# thus we want to merge the equivalence classes of the children of x and b since they are both pointers 
+# BUT during cjoin we realize that x1 and b1 are both bottom types, and thus we change pending accordingly
+
+x := *a; 

@@ -1,0 +1,12 @@
+a := &b; # a points to b 
+b := &b1;
+b1 := &b2;
+x := &x1;
+
+# at this point in time we have a --> b -->b1 --> b2
+# also, x --> x1 
+# when we dereference, we are saying x:=*a, so x := b 
+# thus we want to merge the equivalence classes of the children of x and b since they are both pointers 
+# so after the next step, we should have a merged x1b1 node, with both x and b pointing to it
+
+x := *a; 

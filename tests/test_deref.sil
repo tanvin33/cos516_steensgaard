@@ -1,4 +1,6 @@
 a := &b; # a points to b 
 c := &d; # c points to d
-a := c; # a and c point to new bd node
-x := *a;
+b := &b1;
+d := &d1;
+a := c; # a and c point to new bd node, b1 & d1 are merged
+x := *a; # x should not be merged with bd since it is a bottom type

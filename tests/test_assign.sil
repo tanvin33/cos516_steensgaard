@@ -1,0 +1,11 @@
+# Test of assign cjoin behavior
+a := &b; # a points to b 
+c := &d; # c points to d
+a := c; # a and c don't point to new bd node because b and d are bottom types
+
+# instead, d should have b as a pending 
+
+
+#b := &b1;
+#d := &d1;
+# look at test_assign1.sil for behavior when above 2 lines are added

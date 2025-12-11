@@ -70,6 +70,7 @@ def create_graph(filename, uf, map):
         node_color="lightblue",
         font_weight="bold",
         node_size=1000,
+        arrowsize=25,
     )
     plt.savefig(f"{filename}_graph.png")  # Save the graph as a PNG file
     plt.show()  # Show the graph, needs to be closed manually for program to continue
@@ -128,13 +129,16 @@ def run_steensgaard_analysis(variables, constraints):
     return analyst.uf, analyst.nodes
 
 
-def save_time_analysis(n, elapsed_time, filename="steensgaard_times.csv"):
+def save_time_analysis(
+    n_constraints, n_variables, elapsed_time, filename="steensgaard_times.csv"
+):
     # Add new time data points to CSV file
     df = pd.read_csv(filename)
     new_row_df = pd.DataFrame(
         [
             {
-                "n": n,
+                "constraints": n_constraints,
+                "variables": n_variables,
                 "time": elapsed_time,
             }
         ]
@@ -173,11 +177,11 @@ def main(args=None):
             ast, constraints = parse_program(program)
             n = len(constraints)  # number of constraints
             all_variables = get_all_variables(ast)
+            v = len(all_variables)
 
             # Print important information, helpful for debugging
             print("List of all constraints:")
             print(constraints)
-            print(f"Total number of constraints: {n}")
             print(f"\nAll variable names encountered: {sorted(all_variables)}")
             print("Parsing completed.")
 
@@ -188,9 +192,9 @@ def main(args=None):
             elapsed_time = end_time - start_time
 
             print(
-                f"\nSteensgaard's analysis on {n} constraints completed in {elapsed_time:.6f} seconds."
+                f"\nSteensgaard's analysis on {n} constraints and {v} variables completed in {elapsed_time:.6f} seconds."
             )
-            save_time_analysis(n, elapsed_time)
+            save_time_analysis(n, v, elapsed_time)
             G = create_graph(program_fn, uf, nodes)  # graph visualization
             return 0
     else:

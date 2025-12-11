@@ -1,0 +1,9 @@
+a := &b; # a points to b 
+c := &d; # c points to d
+x := &y; # x points do y
+b := &b1;
+# (don't use ) d := &d1;
+x := add(a,c); # a and c are not bottom
+# x is not bottom, but we call so c-join (y,d) and cjoin (y,b)
+b is not bottom
+# should get nodes, a,c,x,d, ( y,b,), b1

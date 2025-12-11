@@ -1,0 +1,4 @@
+a := &b; # a points to b 
+c := &d; # c points to d
+x := add(y,z);
+# y and z are bottom, cjoin adds pending relationshp Should get 7 nodes a,b,c,d,x,y,z

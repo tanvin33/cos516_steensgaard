@@ -1,0 +1,9 @@
+# Test of assign cjoin behavior
+a := &b; # a points to b 
+c := &d; # c points to d
+a := c; # a and c don't point to new bd node because b and d are bottom types
+
+b := &b1;
+d := &d1;
+
+# now there should be 1 bd node and 1 b1d1 node
