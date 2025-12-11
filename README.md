@@ -14,7 +14,7 @@ python3 steensgaard.py -fn "test.sil"
 
 This should open visualization of the storage shape graph, as well as save it to the png   `test.sil_graph.png`. The code will also output a final typing to the terminal.
 
-The reference language for writing a sil program can be foundin `sil_ref.txt`. It is parsed using `sil_parser.py`.
+The reference grammar for writing a sil program can be foundin `sil_ref.txt`. It is parsed using `sil_parser.py`.
 
 ### Testing
 There are a bunch of example test programs in the `tests/` directory, as well as their corresponding graphs. There are also some programs we wrote to test the correctness of the parser, found in `parser_tests/`. To test the parser you can run `python sil_parser.py -fn <filename>`. 
