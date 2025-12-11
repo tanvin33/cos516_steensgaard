@@ -147,114 +147,115 @@ class Analyst:
     # e1 is a UF ID and t is a TypeNode
     def settype(self, e, t):
         print("Set type", e, "to", t)
-        self.nodes[e] = t
+
+        type_e = self.new_type(e)
+
+        type_e.tau = t.tau
+
+        # TODO: Lambda too
 
         for x in self.pending[e]:
             self.join(e, x)
 
+    # Create a type to represent an implicit points-to relation (reference) from type t1
+    def resolve_tau(self, type_):
+        new_id = self.next_id
+        self.next_id += 1
+        self.new_type(new_id)  # Register new type in UF
+        type_.tau = new_id
+
+    # Helper function for getting a tau reference from a type
+    def get_tau(self, type_):
+        if type_.tau is None:
+            self.resolve_tau(type_)
+        return type_.tau
+
     def handle_assign(self, x, y):
         # handle the assignment x := y
-        e1 = self.ecr(x)
-        e2 = self.ecr(y)
-        t1 = self.nodes[e1]
-        t2 = self.nodes[e2]
+        ecr_x = self.ecr(x)
+        type_x = self.nodes[ecr_x]
+        tau1 = self.get_tau(type_x)
+
+        ecr_y = self.ecr(y)
+        type_y = self.nodes[ecr_y]
+        tau2 = self.get_tau(type_y)
 
         print("Handling assign:", x, y)
-        print("Types before:", t1, t2)
-        print("Taus before:", t1.tau, t2.tau)
+        print("Types before:", type_x, type_y)
+        print("Taus before:", type_x.tau, type_y.tau)
 
-        if t1.tau is None:
-            print("Assign: x has no target.")
-            fresh_var = self.next_id
-            self.next_id += 1
-            self.new_type(fresh_var)  # Register new var in UF
-            t1.tau = fresh_var
-        if t2.tau is None:
-            print("Assign: y has no target.")
-            fresh_var = self.next_id
-            self.next_id += 1
-            self.new_type(fresh_var)  # Register new var in UF
-            t2.tau = fresh_var
-
-        if t1.tau != t2.tau:
+        if tau1 != tau2:
             print("Assign, taus not equal")
-            self.cjoin(self.ecr(t1.tau), self.ecr(t2.tau))
+            self.cjoin(tau1, tau2)
 
     def handle_addr_of(self, x, y):
         # handle the assignment x := &y
         print("Handling address of:", x, y)
 
-        e1 = self.ecr(x)
-        tau_2 = self.ecr(y)
-        t1 = self.nodes[e1]
+        ecr_x = self.ecr(x)
+        type_x = self.nodes[ecr_x]
+        tau1 = self.get_tau(type_x)
 
-        # If t1 is ⊥, set its type to point to e2 (and make it non-bottom)
-        if t1.is_bottom:
-            t1.tau = tau_2
-            # Satisfy any pending assignments on e1
-            self.settype(e1, t1)
+        tau2 = self.ecr(y)
 
-        print("EQR:", e1, tau_2)
-        print("Taus before:", t1.tau, tau_2)
+        print("ECR:", ecr_x, tau2)
+        print("Taus before:", type_x.tau, tau2)
 
-        if t1.tau != tau_2:
-            self.join(t1.tau, tau_2)
+        if tau1 != tau2:
+            self.join(tau1, tau2)
 
     def handle_deref(self, x, y):
         # x := *y
-        e2 = self.ecr(y)
-        t2 = self.nodes[e2]
-        tau_2 = t2.tau
+        ecr_x = self.ecr(x)
+        type_x = self.nodes[ecr_x]
+        tau1 = self.get_tau(type_x)
 
-        e1 = self.ecr(x)
-        t1 = self.nodes[e1]
+        ecr_y = self.ecr(y)
+        type_y = self.nodes[ecr_y]
+        tau2 = self.get_tau(type_y)
 
-        if tau_2 is None:
-            # y has no target, but in order to deref, it must point to something
-            print("Deref: y has no target.")
-            fresh_var = self.next_id
-            self.next_id += 1
-            self.new_type(fresh_var)  # Register new var in UF
-            t2.tau = fresh_var
-            tau_2 = t2.tau
+        type_tau2 = self.nodes[tau2]
 
-        # if y is bottom, create a fresh varaible as its "target"
-        if self.nodes[tau_2].is_bottom:
-            self.settype(tau_2, t1)
+        if type_tau2.is_bottom:
+            self.settype(tau2, type_x)
         else:
-            t3 = self.nodes[tau_2]
-            if t3.tau != t1.tau:
-                self.cjoin(t1.tau, t3.tau)
+            tau3 = self.get_tau(type_tau2)
+            if tau1 != tau3:
+                self.cjoin(tau1, tau3)
+            # TODO Lambda as well
 
     def handle_op(self, x, operands):
-        e_x = self.ecr(x)
-        t_x = self.nodes[e_x]
-        # x := op(...)
-        for operand in operands:
-            print("Operand:", operand)
-            e_yi = self.ecr(operand)
-            t_yi = self.nodes[e_yi]
-            print("c-Joining", t_x.tau, "and", t_yi.tau)
-            if t_x.tau != t_yi.tau:
-                self.cjoin(t_x.tau, t_yi.tau)
+        for y in operands:
+            ecr_x = self.ecr(x)
+            type_x = self.nodes[ecr_x]
+            tau1 = self.get_tau(type_x)
+
+            ecr_y = self.ecr(y)
+            type_y = self.nodes[ecr_y]
+            tau2 = self.get_tau(type_y)
+
+            if tau1 != tau2:
+                self.cjoin(tau1, tau2)
+            
+            # TODO: Lambdas too
+
+    # Make a dummy type to store new ECRs for allocate()
+    def make_ecr_type(self):
+        e1 = self.next_id
+        self.next_id += 1
+        self.new_type(e1)
+
+        # TODO: Lambda too
+
+        type_ = TypeNode("_")
+        type_.tau = e1
+        return type_
 
     def handle_allocate(self, x):
         # x := allocate()
-        e_x = self.ecr(x)
-        t_x = self.nodes[e_x]
-        x_target = t_x.tau
-        if x_target is None:
-            return
-        if self.nodes[x_target].is_bottom:
-            fresh_var_1 = self.next_id
-            self.next_id += 1
-            self.new_type(fresh_var_1)  # Register new var in UF
+        ecr_x = self.ecr(x)
+        type_x = self.nodes[ecr_x]
+        tau = self.get_tau(type_x)
 
-            fresh_var_2 = self.next_id
-            self.next_id += 1
-            self.new_type(fresh_var_2)  # Register new var in UF
-
-            new_type = TypeNode(self.next_id, tau=fresh_var_1, lam=[fresh_var_2])
-            self.next_id += 1
-
-            self.settype(x_target, new_type)
+        if self.nodes[tau].is_bottom:
+            self.settype(tau, self.make_ecr_type())

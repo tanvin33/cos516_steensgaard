@@ -1,0 +1,2 @@
+x := allocate(y);
+x := &z;
