@@ -12,6 +12,8 @@ To run Steensgaard's analysis on the a program `test.sil` run the following comm
 python3 steensgaard.py -fn "test.sil"
 ```
 
+There is an extra command line argument `--graph_all`, which enables graphing the storage shape graph after each constraint is processed to see the progression of the algorithm. It is false by default, and is turned on as follows `python3 steensgaard.py -fn "test.sil" -g`.
+
 This should open visualization of the storage shape graph, as well as save it to the png   `test.sil_graph.png`. The code will also output a final typing to the terminal.
 
 The reference grammar for writing a sil program can be foundin `sil_ref.txt`. It is parsed using `sil_parser.py`.

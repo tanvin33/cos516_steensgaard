@@ -13,6 +13,7 @@ from sil_parser import *
 from analyst import *
 import time
 import pandas as pd
+import math
 
 
 def parse_program(program: str):
@@ -33,15 +34,14 @@ def parse_program(program: str):
         print("Parse Error:", e)
 
 
-def create_graph(filename, uf, map):
+def create_graph(uf, map):
     # Create a new networkx directed graph
     G = nx.DiGraph()
     sets = uf.get_sets()  # get the ECR sets
     for set in sets:
-        for node in set:
-            G.add_node(
-                tuple(set)
-            )  # each set is a node in the graph (named after all its members)
+        G.add_node(
+            tuple(set)
+        )  # each set is a node in the graph (named after all its members)
     for key, node in map.items():
         if node.tau is None:
             continue  # skip if tau is None (no points-to relation)
@@ -57,6 +57,11 @@ def create_graph(filename, uf, map):
                     start = tuple(set)
             G.add_edge(start, end)  # add directed edge from start to end
 
+    return G
+
+
+def draw_single_graph(filename, uf, map):
+    G = create_graph(uf, map)
     # Draw the graph
     plt.figure()
     plt.title(f"Storage Shape Graph for SIL Program: {filename}")
@@ -106,10 +111,18 @@ def get_typing(variables, analyst):
         )
 
 
-def run_steensgaard_analysis(variables, constraints):
-    # variables is a set of variable names in the program
-    # constraints is a list of constraints parsed from the SIL program
-
+def run_steensgaard_analysis(filename, variables, constraints, graph_all=False):
+    """
+    Runs Steensgaard's Points-to Analysis on the given variables and constraints.
+    Args:
+        variables (set): Set of variable names in the program.
+        constraints (list): List of constraints parsed from the SIL program.
+        graph_all (bool): If True, generates graphs after each constraint processing.
+            Do not set to true for timing experiments.
+    Returns:
+        uf (UnionFind): The union-find structure representing ECRs.
+        nodes (dict): Mapping from ECRs to their corresponding TypeNodes.
+    """
     # Initialize the Analyst
     analyst = Analyst()
 
@@ -117,8 +130,41 @@ def run_steensgaard_analysis(variables, constraints):
     for v in variables:
         analyst.new_type(v)
 
+    n_constraints = len(constraints)
+
+    if graph_all and n_constraints > 0:
+        cols = int(math.ceil(math.sqrt(n_constraints)))
+        rows = int(math.ceil(n_constraints / cols))
+        fig, axs = plt.subplots(rows, cols, figsize=(cols * 4, rows * 3))
+        # Normalize axs to a flat list for easy indexing
+        if isinstance(axs, plt.Axes):
+            axs = [axs]
+        else:
+            axs = list(axs.flatten())
+        # Hide any unused axes
+        for i in range(n_constraints, len(axs)):
+            axs[i].axis("off")
+
+        # draw initial graph
+        G = create_graph(analyst.uf, analyst.nodes)
+        pos = nx.spring_layout(G)
+        ax = axs[0]
+        nx.draw(
+            G,
+            pos,
+            with_labels=True,
+            node_color="lightblue",
+            font_weight="bold",
+            font_size=8,
+            node_size=300,
+            arrowsize=10,
+            ax=ax,
+        )
+        ax.set_title(f"Initial graph")
+        ax.set_axis_on()
+
     # Process each constraint
-    for c in constraints:
+    for i, c in enumerate(constraints):
         print("Processing constraint:", c)
 
         match c["type"]:
@@ -146,8 +192,34 @@ def run_steensgaard_analysis(variables, constraints):
         print("Pending:", analyst.pending)  # debugging support
         get_debugging_types(variables, analyst)  # debugging support
 
+        # if graph_all, draw the graph after each constraint
+        if graph_all:
+            G = create_graph(analyst.uf, analyst.nodes)
+            pos = nx.planar_layout(G)
+            ax = axs[i + 1]
+            nx.draw(
+                G,
+                pos,
+                with_labels=True,
+                node_color="lightblue",
+                font_weight="bold",
+                font_size=8,
+                node_size=300,
+                arrowsize=10,
+                ax=ax,
+            )
+            ax.set_title(f"After constraint {i + 1}")
+            ax.set_axis_on()
+
     print("Final Types:")
     get_typing(variables, analyst)  # get the final types in the format of the paper
+
+    if graph_all:
+        output = f"{filename}_allconstraints_graphs.png"
+        fig.suptitle(f"Steensgaard's Analysis Progression: {filename}")
+        fig.tight_layout()
+        fig.savefig(output)
+        plt.close(fig)
 
     return analyst.uf, analyst.nodes
 
@@ -187,9 +259,17 @@ def main(args=None):
         "-fn", "--filename", type=str, help="Specify a filename for a SIL program."
     )
 
+    parser.add_argument(
+        "-g",
+        "--graph_all",
+        action="store_true",
+        help="Enable intermediary graph visualizations (default: False)",
+    )
+
     # Parse the arguments
     # If args is None, parse_args will default to sys.argv[1:]
     program_fn = parser.parse_args(args).filename
+    graph_all = parser.parse_args(args).graph_all
 
     # Access the parsed argument (filename)
     if program_fn:
@@ -210,7 +290,9 @@ def main(args=None):
 
             # Run Steensgaard's analysis, and time it (for performance measurement)
             start_time = time.perf_counter()
-            uf, nodes = run_steensgaard_analysis(all_variables, constraints)
+            uf, nodes = run_steensgaard_analysis(
+                program_fn, all_variables, constraints, graph_all=graph_all
+            )
             end_time = time.perf_counter()
             elapsed_time = end_time - start_time
 
@@ -218,7 +300,7 @@ def main(args=None):
                 f"\nSteensgaard's analysis on {n} constraints and {v} variables completed in {elapsed_time:.6f} seconds."
             )
             save_time_analysis(n, v, elapsed_time)
-            G = create_graph(program_fn, uf, nodes)  # graph visualization
+            draw_single_graph(program_fn, uf, nodes)  # graph visualization
             return 0
     else:
         print("No filename provided.")
