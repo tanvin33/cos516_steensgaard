@@ -1,0 +1,5 @@
+flowchart LR
+    A[SIL source file] -->| Parser: sil_parser.py| B(AST)
+    B -->|Constraint Extractor | D[all_constraints list]
+    D -->|"run_steensgaard_analysis()"| E[Equivalence Classes & Typing ]
+    E -->|"create_graph()"| F[Storage Shape Graph]

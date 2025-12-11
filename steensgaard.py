@@ -37,7 +37,6 @@ def create_graph(filename, uf, map):
     # Create a new networkx directed graph
     G = nx.DiGraph()
     sets = uf.get_sets()  # get the ECR sets
-    print("SETS:", tuple(sets))  # for debugging
     for set in sets:
         for node in set:
             G.add_node(
@@ -77,13 +76,34 @@ def create_graph(filename, uf, map):
     return G
 
 
-# This function returns the final typing of all variables.
-# The ECR is its union-find representative. The TypeNode is the relevant alpha type
-def get_typing(variables, analyst):
-    for variable in variables:
+def get_debugging_types(variables, analyst):
+    """
+    This function prints the current typing of all variables for debugging.
+    It prints out the variable name, its ECR (representative), and its associated
+    TypeNode.
+
+    """
+    for variable in sorted(variables):  # sort the variables:
         ecr_v = analyst.ecr(variable)
         type_var = analyst.nodes[ecr_v]
         print(f"Variable {variable} (ECR {ecr_v}): TypeNode {type_var}")
+
+
+def get_typing(variables, analyst):
+    """
+    This function prints the final typing of all variables.
+    Args:
+        variables (set): Set of variable names in the program.
+        analyst (Analyst): The Analyst object containing the analysis results.
+    """
+    for variable in sorted(variables):  # sort the variables:
+        ecr_v = analyst.ecr(variable)
+        type_var = analyst.nodes[ecr_v]
+        type_tau = analyst.ecr(type_var.tau) if type_var.tau != None else "\u22a5"
+        type_lambda = type_var.lam if type_var.lam != None else "\u22a5"
+        print(
+            f"{variable}: {analyst.ecr(type_var.uf_id)} = ref({type_tau}, {type_lambda})"
+        )
 
 
 def run_steensgaard_analysis(variables, constraints):
@@ -124,10 +144,10 @@ def run_steensgaard_analysis(variables, constraints):
                 print("Unrecognized constraint.")
 
         print("Pending:", analyst.pending)  # debugging support
-        get_typing(variables, analyst)  # debugging support
+        get_debugging_types(variables, analyst)  # debugging support
 
     print("Final Types:")
-    get_typing(variables, analyst)
+    get_typing(variables, analyst)  # get the final types in the format of the paper
 
     return analyst.uf, analyst.nodes
 
