@@ -53,7 +53,6 @@ def create_sil_parser():
     # ==========================================
     # 2. Functions to save info for commands relevant to Steensgaard's analysis
     # ==========================================
-
     def cmd_assign(tokens):
         # x := y
         lhs = tokens[0]
@@ -86,7 +85,7 @@ def create_sil_parser():
         operand_variables = list()
         for operand in operands:
             # Only add if it's an identifier (not a number)
-            if isinstance(operand, str) and operand[0].isalpha():
+            if is_identifier(operand):
                 operand_variables.append(operand)
 
         return {
@@ -145,7 +144,7 @@ def create_sil_parser():
         arg_variables = list()
         for arg in args:
             # Only add if it's an identifier (not a number)
-            if isinstance(arg, str) and arg[0].isalpha():
+            if is_identifier(arg):
                 arg_variables.append(arg)
 
         return {
@@ -261,6 +260,11 @@ def create_sil_parser():
     return program
 
 
+def is_identifier(value):
+    """Check if a value is an identifier (string starting with a letter)."""
+    return isinstance(value, str) and value[0].isalpha()
+
+
 # After we have the AST, we can traverse it to get all the relevant constraints
 # to do Steensgaard's analysis. This means ignoring control flow statements, and
 # skip statements, but getting the constraints inside their blocks.
@@ -281,7 +285,12 @@ def get_all_constraints(ast):
         elif stmt["type"] == "skip":
             continue
         else:
-            constraints.append(stmt)
+            if "rhs" in stmt and is_identifier(stmt["rhs"]):
+                constraints.append(stmt)
+            elif not ("rhs" in stmt):
+                constraints.append(stmt)
+            else:
+                continue
     return constraints
 
 
@@ -321,7 +330,8 @@ def get_all_variables(ast):
             if "lhs" in stmt:
                 variables.add(stmt["lhs"])
             if "rhs" in stmt:
-                variables.add(stmt["rhs"])
+                if is_identifier(stmt["rhs"]):
+                    variables.add(stmt["rhs"])
             if "operands" in stmt:
                 for operand in stmt["operand_variables"]:
                     # Only add if it's an identifier (not a number)
