@@ -1,16 +1,15 @@
 from union_find import UnionFind
 
 
-""" 
-A TypeNode represents an Alpha type in Steensgaard's analysis. 
-
-It contains a UF ID, and structural information (Tau and Lambda types).
-The tau type is represented as another UF ID (the target of a pointer).
-
-"""
-
-
 class TypeNode:
+    """
+    A TypeNode represents an Alpha type in Steensgaard's analysis.
+
+    It contains a UF ID, and structural information (Tau and Lambda types).
+    The tau type is represented as another UF ID (the target of a pointer).
+
+    """
+
     def __init__(self, uf_id=None, tau=None, lam=None):
         self.uf_id = uf_id
 
@@ -30,16 +29,15 @@ class TypeNode:
         return f"TypeNode(uf_id={self.uf_id}, is_bottom={self.is_bottom}, tau={self.tau}, lam={self.lam})"
 
 
-"""
-The Analyst class does the heavy lifting of Steensgaard's analysis. 
-It uses a Union-Find data structure to manage types, based on their UF IDs.
-
-It supports operations to handle different kinds of constraints, such as
-assignments, address-of, etc. 
-"""
-
-
 class Analyst:
+    """
+    The Analyst class does the heavy lifting of Steensgaard's analysis.
+    It uses a Union-Find data structure to manage types, based on their UF IDs.
+
+    It supports operations to handle different kinds of constraints, such as
+    assignments, address-of, etc.
+    """
+
     def __init__(self):
         # The Union-Find instance used for managing Types
         self.uf = UnionFind()

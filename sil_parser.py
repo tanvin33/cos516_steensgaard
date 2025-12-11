@@ -103,6 +103,7 @@ def create_sil_parser():
         return {"type": "allocate", "lhs": lhs}
 
     def add_scope(statements, scope_prefix):
+        # Recursively rescope the variables in the statements list
         for stmt in statements:
             if "lhs" in stmt:
                 stmt["lhs"] = scope_prefix + "_" + stmt["lhs"]
@@ -137,6 +138,7 @@ def create_sil_parser():
         }
 
     def cmd_fun_app(tokens):
+        # x := p(...) [function application]
         lhs = tokens["lhs"]
         fun_name = tokens["fun_name"]
         args = tokens["args"].asList()
