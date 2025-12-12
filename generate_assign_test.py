@@ -1,6 +1,8 @@
 def main():
     z = int(input("Enter a number z: ").strip())
 
+    z *= 10000
+
     filename = f"tests/{z}_assign_test.sil"
 
     with open(filename, "w") as f:
