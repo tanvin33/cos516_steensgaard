@@ -92,7 +92,6 @@ class Analyst:
         e = self.uf.union(e1, e2)
 
         if t1.is_bottom:
-            # self.nodes[e] = t2
             self.assign_type(e, t2)
 
             if t2.is_bottom:
@@ -101,7 +100,6 @@ class Analyst:
                 for x in self.pending[e1]:
                     self.join(e, x)
         else:
-            # self.nodes[e] = t1
             self.assign_type(e, t1)
 
             if t2.is_bottom:
@@ -157,19 +155,6 @@ class Analyst:
             if lam1 != lam2:
                 self.join(lam1, lam2)
 
-        # TODO: unify lambda types as well, currently not handled
-
-        # if len(t1.lam_args) != len(t2.lam_args) or len(t1.lam_rets) != len(t2.lam_rets):
-        #     print("ERROR")
-        #     # case with different arity (should not happen)
-        #     return
-
-        # for i in range(len(t1.lam_args)):
-        #     self.join(t1.lam_args[i].uf_id, t2.lam_args[i].uf_id)
-
-        # for i in range(len(t1.lam_rets)):
-        #     self.join(t1.lam_rets[i].uf_id, t2.lam_rets[i].uf_id)
-
     # e1 and e2 are UF IDs
     def cjoin(self, e1, e2):
         print("cjoin", e1, e2)
@@ -182,34 +167,16 @@ class Analyst:
             print("t2 is not bottom, joining")
             self.join(e1, e2)
 
-    # TODO: MUST: figure out which of the following options produces
-    # the right shape graph!!!
     def assign_type(self, e, t):
         type_e = self.nodes[e]
         type_e.tau = t.tau
         type_e.lam = t.lam
         type_e.lam_args = t.lam_args
         type_e.lam_rets = t.lam_rets
-        # self.pending[e] = self.pending[self.ecr(t.uf_id)]
-
-    # Or alternatively just return t
-    # return t
-    """
-    def assign_type(self, e, t):
-        type_e = self.new_type(e)
-        type_e.tau = t.tau
-        type_e.lam = t.lam
-        return type_e
-
-        # Or alternatively just return t
-        #return t
-    """
 
     # e1 is a UF ID and t is a TypeNode with properties we want to copy over.
     def settype(self, e, t):
         print("Set type", e, "to", t)
-
-        # self.nodes[e] = self.assign_type(e, t)
 
         self.assign_type(e, t)
 
@@ -304,27 +271,6 @@ class Analyst:
     # Make a dummy type to store new ECRs for allocate()
     def make_ecr_type(self):
         return self.fresh_type()
-        # type_ = TypeNode("_")
-        # type_.tau = self.fresh_type().uf_id
-        # type_.lam = self.fresh_type().uf_id
-        # return type_
-
-        # type_ = self.fresh_type()
-        # type_.tau = self.fresh_type().uf_id
-        # type_.lam = self.fresh_type().uf_id
-        # return type_
-
-        """
-        e1 = self.next_id
-        self.next_id += 1
-        self.new_type(e1)
-
-        # TODO: Lambda too
-
-        type_ = TypeNode("_")
-        type_.tau = e1
-        return type_
-        """
 
     def handle_allocate(self, x):
         # x := allocate()
@@ -370,19 +316,6 @@ class Analyst:
         return e
 
     def make_lam_type(self, args, rets):
-        # TODO: Figure out if type should be fresh (calls new_type,
-        # ends up in nodes) or should just be dummy type for copying,
-        # based conclusions about the assign_type() correct implementation
-
-        # Currently it seems more elegant to call fresh_type here, and then
-        # change assign_type to return t without calling new_type.
-
-        # type_ = self.fresh_type()
-        # type_.lam_args = args
-        # type_.lam_rets = rets
-
-        # return type_
-
         type_ = TypeNode("_")
         type_.lam_args = args
         type_.lam_rets = rets
@@ -408,12 +341,9 @@ class Analyst:
                 alpha_r_i = self.get_alpha(r_i)
                 alpha_r.append(alpha_r_i)
 
-            # TODO: Should not store ECRs but actual nodes
             self.settype(lam, self.make_lam_type(alpha_f, alpha_r))
 
         else:
-            # lam_args = type_lam.lam_args
-            # lam_rets = type_lam.lam_rets
 
             for i in range(len(f)):
                 alpha_i = type_lam.lam_args[i]
@@ -467,20 +397,6 @@ class Analyst:
             for i in x:
                 alpha_i = self.make_ecr_type()
                 alpha_rets.append(alpha_i)
-
-            # Just carry over the args and rets instead.
-            # TODO FIX BELOW
-            # self.settype(lam, self.make_lam_type(alpha_args))
-
-            """
-            alpha_args = []
-
-            for i in y:
-                alpha_i = self.make_ecr_type()
-                alpha_args.append(alpha_i)
-
-            self.settype(lam, self.make_lam_type(alpha_args))
-            """
 
         lam_args = type_lam.lam_args
         lam_rets = type_lam.lam_rets
