@@ -270,7 +270,10 @@ class Analyst:
 
     # Make a dummy type to store new ECRs for allocate()
     def make_ecr_type(self):
-        return self.fresh_type()
+        type_ = TypeNode('_')
+        type_.tau = self.fresh_type().uf_id
+        type_.lam = self.fresh_type().uf_id
+        return type_
 
     def handle_allocate(self, x):
         # x := allocate()
@@ -311,7 +314,6 @@ class Analyst:
 
     def get_alpha(self, e):
         if e not in self.nodes:
-            # e = self.fresh_type().uf_id
             self.new_type(e)
         return e
 
