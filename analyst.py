@@ -93,7 +93,7 @@ class Analyst:
 
         if t1.is_bottom:
             #self.nodes[e] = t2
-            self.nodes[e] = self.assign_type(e, t2)
+            self.assign_type(e, t2)
 
             if t2.is_bottom:
                 self.pending[e] = self.pending[e1] | self.pending[e2]
@@ -102,7 +102,7 @@ class Analyst:
                     self.join(e, x)
         else:
             #self.nodes[e] = t1
-            self.nodes[e] = self.assign_type(e, t1)
+            self.assign_type(e, t1)
 
             if t2.is_bottom:
                 for x in self.pending[e2]:
@@ -186,6 +186,16 @@ class Analyst:
     #TODO: MUST: figure out which of the following options produces
     # the right shape graph!!!
     def assign_type(self, e, t):
+        type_e = self.nodes[e]
+        type_e.tau = t.tau
+        type_e.lam = t.lam
+        type_e.lam_args = t.lam_args
+        type_e.lam_rets = t.lam_rets
+
+    # Or alternatively just return t
+    #return t
+    '''
+    def assign_type(self, e, t):
         type_e = self.new_type(e)
         type_e.tau = t.tau
         type_e.lam = t.lam
@@ -193,12 +203,15 @@ class Analyst:
 
         # Or alternatively just return t
         #return t
+    '''
 
-    # e1 is a UF ID and t is a TypeNode
+    # e1 is a UF ID and t is a TypeNode with properties we want to copy over.
     def settype(self, e, t):
         print("Set type", e, "to", t)
 
-        self.nodes[e] = self.assign_type(e, t)
+        #self.nodes[e] = self.assign_type(e, t)
+
+        self.assign_type(e, t)
 
         for x in self.pending[e]:
             self.join(e, x)
@@ -337,8 +350,6 @@ class Analyst:
                 self.cjoin(tau3, tau2)
             if lam2 != lam3:
                 self.cjoin(lam3, lam2)
-            
-            # TODO: Lambda too
 
     # Helper function for getting a lambda reference from a type
     def get_lam(self, type_):
@@ -451,7 +462,8 @@ class Analyst:
                 alpha_rets.append(alpha_i)
 
             # Just carry over the args and rets instead.
-            self.settype(lam, self.make_lam_type(alpha_args))
+            # TODO FIX BELOW
+            #self.settype(lam, self.make_lam_type(alpha_args))
 
             '''
             alpha_args = []
