@@ -17,6 +17,7 @@ class TypeNode:
 
         self.lam = lam
 
+        # List of TypeNodes
         self.lam_args = []
         self.lam_rets = []
 
@@ -430,8 +431,7 @@ class Analyst:
                 if lam1 != lam2:
                     self.join(lam1, lam2)
     
-    '''
-    def handle_fun_app(self, p, y):
+    def handle_fun_app(self, x, p, y):
         ecr_p = self.ecr(p)
         type_p = self.nodes[ecr_p]
 
@@ -440,22 +440,60 @@ class Analyst:
 
         if type_lam.is_bottom:
             alpha_args = []
+            alpha_rets = []
 
             for i in y:
                 alpha_i = self.make_ecr_type()
-                alpha.append(alpha_i)
+                alpha_args.append(alpha_i)
 
-            self.settype(lam, self.make_lam_type(alpha))
+            for i in x:
+                alpha_i = self.make_ecr_type()
+                alpha_rets.append(alpha_i)
 
-            #self.settype(lam, ***)
-    '''
-    '''
-            for arg in type_lam.lam_args:
-                tau1 = arg.tau
-                lam1 = arg.lam
+            # Just carry over the args and rets instead.
+            self.settype(lam, self.make_lam_type(alpha_args))
 
-                ecr_x = self.ecr(x)
-                type_x = self.nodes[ecr_x]
+            '''
+            alpha_args = []
 
-            for ret in type_lam.lam_rets:
-    '''
+            for i in y:
+                alpha_i = self.make_ecr_type()
+                alpha_args.append(alpha_i)
+
+            self.settype(lam, self.make_lam_type(alpha_args))
+            '''
+
+        lam_args = type_lam.lam_args
+        lam_rets = type_lam.lam_rets
+
+        for i in range(len(lam_args)):
+            alpha_i = lam_args[i]
+            tau1 = self.get_tau(alpha_i)
+            lam1 = self.get_lam(alpha_i)
+
+            ecr_y_i = self.ecr(y[i])
+            type_y_i = self.nodes[ecr_y_i]
+            tau2 = self.get_tau(type_y_i)
+            lam2 = self.get_lam(type_y_i)
+
+            if tau1 != tau2:
+                self.cjoin(tau1, tau2)
+
+            if lam1 != lam2:
+                self.cjoin(lam1, lam2)
+
+        for i in range(len(lam_rets)):
+            alpha_i = lam_args[i]
+            tau1 = self.get_tau(alpha_i)
+            lam1 = self.get_lam(alpha_i)
+
+            ecr_x_i = self.ecr(x[i])
+            type_x_i = self.nodes[ecr_x_i]
+            tau2 = self.get_tau(type_x_i)
+            lam2 = self.get_lam(type_x_i)
+
+            if tau1 != tau2:
+                self.cjoin(tau2, tau1)
+
+            if lam1 != lam2:
+                self.cjoin(lam2, lam1)
