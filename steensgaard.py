@@ -305,7 +305,8 @@ def main(args=None):
             print(
                 f"\nSteensgaard's analysis on {n} constraints and {v} variables completed in {elapsed_time:.6f} seconds."
             )
-            save_time_analysis(n, v, elapsed_time)
+            if not graph_all:
+                save_time_analysis(n, v, elapsed_time)
             draw_single_graph(program_fn, uf, nodes)  # graph visualization
             return 0
     else:
