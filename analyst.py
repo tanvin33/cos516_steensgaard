@@ -191,6 +191,7 @@ class Analyst:
         type_e.lam = t.lam
         type_e.lam_args = t.lam_args
         type_e.lam_rets = t.lam_rets
+        #self.pending[e] = self.pending[self.ecr(t.uf_id)]
 
     # Or alternatively just return t
     #return t
@@ -303,10 +304,16 @@ class Analyst:
 
     # Make a dummy type to store new ECRs for allocate()
     def make_ecr_type(self):
-        type_ = TypeNode("_")
-        type_.tau = self.fresh_type().uf_id
-        type_.lam = self.fresh_type().uf_id
-        return type_
+        return self.fresh_type()
+        #type_ = TypeNode("_")
+        #type_.tau = self.fresh_type().uf_id
+        #type_.lam = self.fresh_type().uf_id
+        #return type_
+    
+        #type_ = self.fresh_type()
+        #type_.tau = self.fresh_type().uf_id
+        #type_.lam = self.fresh_type().uf_id
+        #return type_
 
         '''
         e1 = self.next_id
@@ -359,7 +366,8 @@ class Analyst:
         
     def get_alpha(self, e):
         if e not in self.nodes:
-            e = self.fresh_type().uf_id
+            #e = self.fresh_type().uf_id
+            self.new_type(e)
         return e
     
     def make_lam_type(self, args, rets):
