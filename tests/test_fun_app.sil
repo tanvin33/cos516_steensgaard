@@ -1,0 +1,3 @@
+# Simple function application
+y := &x;
+z := f(x);

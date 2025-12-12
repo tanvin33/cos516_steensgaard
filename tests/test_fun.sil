@@ -1,0 +1,4 @@
+# Simple function test
+y := &x; #basic check 
+f := fun(a) -> (r) {r := &a;};
+z := f(y);
