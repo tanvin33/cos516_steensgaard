@@ -17,7 +17,7 @@ class TypeNode:
 
         self.lam = lam
 
-        # List of TypeNodes
+        # List of UF IDs
         self.lam_args = []
         self.lam_rets = []
 
@@ -393,11 +393,11 @@ class Analyst:
             alpha_rets = []
 
             for i in y:
-                alpha_i = self.make_ecr_type()
+                alpha_i = self.make_ecr_type().uf_id
                 alpha_args.append(alpha_i)
 
             for i in x:
-                alpha_i = self.make_ecr_type()
+                alpha_i = self.make_ecr_type().uf_id
                 alpha_rets.append(alpha_i)
 
         lam_args = type_lam.lam_args
@@ -405,8 +405,8 @@ class Analyst:
 
         for i in range(len(lam_args)):
             alpha_i = lam_args[i]
-            tau1 = self.get_tau(alpha_i)
-            lam1 = self.get_lam(alpha_i)
+            tau1 = self.get_tau(self.nodes[alpha_i])
+            lam1 = self.get_lam(self.nodes[alpha_i])
 
             ecr_y_i = self.ecr(y[i])
             type_y_i = self.nodes[ecr_y_i]
@@ -421,8 +421,8 @@ class Analyst:
 
         for i in range(len(lam_rets)):
             alpha_i = lam_args[i]
-            tau1 = self.get_tau(alpha_i)
-            lam1 = self.get_lam(alpha_i)
+            tau1 = self.get_tau(self.nodes[alpha_i])
+            lam1 = self.get_lam(self.nodes[alpha_i])
 
             ecr_x_i = self.ecr(x[i])
             type_x_i = self.nodes[ecr_x_i]
